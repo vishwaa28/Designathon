@@ -1,2 +1,2 @@
-# Designathon
-Contains both designathon 2026 ppt and project codes
+#Prerequisites
+Clone this github repo in your local.
