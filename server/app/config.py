@@ -50,6 +50,12 @@ class Settings:
 
     voice_audio_processing = (_env("AZURE_VOICELIVE_AUDIO_PROCESSING", default="true") or "true").lower() == "true"
 
+    # E-mail: Twilio SendGrid (API key) or plain SMTP. EMAIL_PROVIDER=sendgrid|smtp, else SendGrid when its key is set.
+    email_provider = (_env("EMAIL_PROVIDER", default="") or "").lower()
+    sendgrid_api_key = _env("SENDGRID_API_KEY")
+    sendgrid_from = _env("SENDGRID_FROM", "SENDGRID_FROM_EMAIL")
+    sendgrid_from_name = _env("SENDGRID_FROM_NAME", default="Meridian Airways Disruption Desk")
+
     smtp_host = _env("SMTP_HOST")
     smtp_port = int(_env("SMTP_PORT", default="587"))
     smtp_user = _env("SMTP_USER", "SMTP_USERNAME")

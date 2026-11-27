@@ -1,4 +1,4 @@
-"""Outbound traveler notifications: e-mail over SMTP and SMS through Twilio or Fast2SMS.
+"""Outbound traveler notifications: e-mail through Twilio SendGrid or SMTP, and SMS through Twilio or Fast2SMS.
 
 Only passengers flagged as contacts (real address and number) are sent anything; every other
 notification in the simulation is recorded but not transmitted.
@@ -37,8 +37,22 @@ def _sms_provider() -> str | None:
     return None
 
 
+def _email_provider() -> str | None:
+    p = settings.email_provider
+    if p in ("sendgrid", "smtp"):
+        return p
+    if settings.sendgrid_api_key and settings.sendgrid_from:
+        return "sendgrid"
+    if settings.smtp_host and settings.smtp_from:
+        return "smtp"
+    return None
+
+
 def email_configured() -> bool:
-    return bool(settings.smtp_host and settings.smtp_from)
+    p = _email_provider()
+    if p == "sendgrid":
+        return bool(settings.sendgrid_api_key and settings.sendgrid_from)
+    return p == "smtp" and bool(settings.smtp_host and settings.smtp_from)
 
 
 def sms_configured() -> bool:
@@ -51,8 +65,9 @@ def sms_configured() -> bool:
 
 def status() -> dict:
     return {
-        "email": {"configured": email_configured(), "provider": "SMTP", "host": settings.smtp_host,
-                  "sender": settings.smtp_from},
+        "email": {"configured": email_configured(),
+                  "provider": "SendGrid" if _email_provider() == "sendgrid" else "SMTP",
+                  "sender": settings.sendgrid_from if _email_provider() == "sendgrid" else settings.smtp_from},
         "sms": {"configured": sms_configured(), "provider": (_sms_provider() or "none").title()},
     }
 
@@ -67,8 +82,9 @@ def mask_phone(phone: str) -> str:
     return f"+91 {digits[:2]}xxxxx{digits[-3:]}" if len(digits) == 10 else phone
 
 
-def _result(channel: str, to: str, status_: str, detail: str = "") -> dict:
-    return {"channel": channel, "to": to, "status": status_, "detail": detail[:240], "at": iso(now())}
+def _result(channel: str, to: str, status_: str, detail: str = "", provider: str | None = None) -> dict:
+    return {"channel": channel, "to": to, "status": status_, "detail": detail[:240], "provider": provider,
+            "at": iso(now())}
 
 
 def _email_html(subject: str, message: str, details: list[tuple[str, str]], link: str | None,
@@ -103,10 +119,7 @@ Need help? Call our help desk on {HELP_DESK} (24x7). This message was sent by th
 </table></td></tr></table></body></html>"""
 
 
-def send_email(to: str, subject: str, text: str, html_body: str) -> dict:
-    masked = mask_email(to)
-    if not email_configured():
-        return _result("EMAIL", masked, "NOT_CONFIGURED", "Set SMTP_HOST, SMTP_USER, SMTP_PASSWORD and SMTP_FROM")
+def _send_smtp(to: str, subject: str, text: str, html_body: str) -> str:
     msg = EmailMessage()
     msg["Subject"] = subject
     msg["From"] = formataddr((settings.smtp_from_name, settings.smtp_from))
@@ -114,22 +127,51 @@ def send_email(to: str, subject: str, text: str, html_body: str) -> dict:
     msg["Message-ID"] = make_msgid(domain=settings.smtp_from.partition("@")[2] or None)
     msg.set_content(text)
     msg.add_alternative(html_body, subtype="html")
+    context = ssl.create_default_context()
+    if settings.smtp_port == 465:
+        server = smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port, timeout=TIMEOUT_S, context=context)
+    else:
+        server = smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=TIMEOUT_S)
+        server.starttls(context=context)
+    with server:
+        if settings.smtp_user and settings.smtp_password:
+            server.login(settings.smtp_user, settings.smtp_password)
+        server.send_message(msg)
+    return f"via {settings.smtp_host}"
+
+
+def _send_sendgrid(to: str, subject: str, text: str, html_body: str) -> str:
+    payload = {
+        "personalizations": [{"to": [{"email": to}]}],
+        "from": {"email": settings.sendgrid_from, "name": settings.sendgrid_from_name},
+        "subject": subject,
+        "content": [{"type": "text/plain", "value": text}, {"type": "text/html", "value": html_body}],
+    }
+    resp = httpx.post("https://api.sendgrid.com/v3/mail/send", json=payload, timeout=TIMEOUT_S,
+                      headers={"Authorization": f"Bearer {settings.sendgrid_api_key}"})
+    if resp.status_code in (200, 201, 202):
+        return f"SendGrid accepted {resp.headers.get('x-message-id', '')}".strip()
     try:
-        context = ssl.create_default_context()
-        if settings.smtp_port == 465:
-            server = smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port, timeout=TIMEOUT_S, context=context)
-        else:
-            server = smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=TIMEOUT_S)
-            server.starttls(context=context)
-        with server:
-            if settings.smtp_user and settings.smtp_password:
-                server.login(settings.smtp_user, settings.smtp_password)
-            server.send_message(msg)
-        return _result("EMAIL", masked, "SENT", f"via {settings.smtp_host}")
+        errors = resp.json().get("errors") or []
+        detail = "; ".join(e.get("message", "") for e in errors) or resp.text[:160]
+    except ValueError:
+        detail = resp.text[:160]
+    raise RuntimeError(f"SendGrid {resp.status_code}: {detail}")
+
+
+def send_email(to: str, subject: str, text: str, html_body: str) -> dict:
+    masked = mask_email(to)
+    provider = _email_provider()
+    if not email_configured():
+        return _result("EMAIL", masked, "NOT_CONFIGURED",
+                       "Set SENDGRID_API_KEY and SENDGRID_FROM (or the SMTP_* settings)")
+    label = "SendGrid" if provider == "sendgrid" else "SMTP"
+    try:
+        detail = (_send_sendgrid if provider == "sendgrid" else _send_smtp)(to, subject, text, html_body)
+        return _result("EMAIL", masked, "SENT", detail, label)
     except Exception as exc:  # noqa: BLE001
         log.warning("E-mail to %s failed: %s", masked, exc)
-        return _result("EMAIL", masked, "FAILED", f"{type(exc).__name__}: {exc}")
-
+        return _result("EMAIL", masked, "FAILED", f"{type(exc).__name__}: {exc}", label)
 
 def _send_twilio(phone: str, text: str) -> tuple[bool, str]:
     data = {"To": phone, "Body": text}
@@ -172,7 +214,7 @@ def send_sms(phone: str, text: str) -> dict:
         ok, detail = False, f"{type(exc).__name__}: {exc}"
     if not ok:
         log.warning("SMS to %s failed: %s", masked, detail)
-    return _result("SMS", masked, "SENT" if ok else "FAILED", detail)
+    return _result("SMS", masked, "SENT" if ok else "FAILED", detail, (_sms_provider() or "").title() or None)
 
 
 def _sms_text(record: dict) -> str:

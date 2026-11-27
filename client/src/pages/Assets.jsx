@@ -14,8 +14,8 @@ function WorkOrderCard({ wo, onAdvance }) {
   const idx = WO_FLOW.indexOf(wo.status)
   const next = WO_FLOW[idx + 1]
   return (
-    <Card>
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-3.5 sm:px-5">
+    <section>
+      <div className="flex flex-wrap items-start justify-between gap-3 px-4 pb-1 pt-4 sm:px-5">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-[12.5px] font-semibold text-slate-700">{wo.id}</span>
@@ -34,12 +34,14 @@ function WorkOrderCard({ wo, onAdvance }) {
           <Badge tone="emerald" dot>Completed {fmtTime(wo.completed_at)}</Badge>
         )}
       </div>
-      <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1fr_260px]">
-        <div>
+      <div className="grid gap-5 px-4 pb-5 pt-3 sm:px-5 lg:grid-cols-[1fr_220px]">
+        <div className="min-w-0">
           <p className="text-[12.5px] leading-relaxed text-slate-600">{wo.description}</p>
-          <RepairTimeline window={wo.repair_window} dispatchAt={wo.created_at} onSiteAt={wo.on_site_at} />
+          <div className="mt-5 px-9">
+            <RepairTimeline window={wo.repair_window} dispatchAt={wo.created_at} onSiteAt={wo.on_site_at} />
+          </div>
         </div>
-        <ol className="space-y-2">
+        <ol className="h-fit space-y-2.5 rounded-lg bg-slate-50 p-3.5">
           {WO_FLOW.map((s, i) => (
             <li key={s} className="flex items-center gap-2.5 text-[12.5px]">
               <span className={cx('flex h-5 w-5 items-center justify-center rounded-full text-[10.5px] font-semibold',
@@ -49,7 +51,7 @@ function WorkOrderCard({ wo, onAdvance }) {
           ))}
         </ol>
       </div>
-    </Card>
+    </section>
   )
 }
 
@@ -69,40 +71,43 @@ export default function Assets() {
     category === 'infra' ? a.category !== 'Fleet' : a.category === 'Fleet',
   )
   const down = assets.items.filter((a) => a.status !== 'OPERATIONAL').length
+  const openCount = wos.items.filter((w) => w.status !== 'COMPLETED').length
 
   return (
     <div className="space-y-4 p-4 sm:space-y-5 sm:p-6">
-      <div className="grid gap-5 xl:grid-cols-3">
-        <div className="space-y-4 xl:col-span-2">
-          <div className="flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-[14px] font-semibold text-slate-900"><ClipboardList size={16} /> Work orders</h3>
-            <span className="text-[12.5px] text-slate-500">{wos.items.filter((w) => w.status !== 'COMPLETED').length} open</span>
-          </div>
-          {wos.items.map((wo) => (
-            <WorkOrderCard key={wo.id} wo={wo} onAdvance={advance} />
-          ))}
-          {!wos.items.length && (
-            <Card>
-              <Empty icon={Wrench} title="No work orders" text="The infrastructure triage agent raises work orders automatically when a fault is detected." />
-            </Card>
+      <div className="grid grid-cols-1 items-start gap-4 sm:gap-5 xl:grid-cols-3">
+        <Card className="min-w-0 xl:col-span-2">
+          <CardHeader
+            title="Work orders"
+            subtitle="Raised by the infrastructure triage agent"
+            icon={ClipboardList}
+            actions={<Badge tone={openCount ? 'amber' : 'slate'}>{openCount} open</Badge>}
+          />
+          {wos.items.length ? (
+            <div className="divide-y divide-slate-100">
+              {wos.items.map((wo) => (
+                <WorkOrderCard key={wo.id} wo={wo} onAdvance={advance} />
+              ))}
+            </div>
+          ) : (
+            <Empty icon={Wrench} title="No work orders" text="The infrastructure triage agent raises work orders automatically when a fault is detected." />
           )}
-        </div>
-        <Card className="h-fit">
+        </Card>
+        <Card className="min-w-0">
           <CardHeader title="Maintenance teams" subtitle={`${down} asset${down === 1 ? '' : 's'} out of service`} icon={HardHat} />
           <div className="divide-y divide-slate-100">
             {assets.teams.map((t) => (
-              <div key={t.id} className="flex items-center justify-between gap-3 px-5 py-2.5">
+              <div key={t.id} className="flex items-start justify-between gap-3 px-4 py-3 sm:px-5">
                 <div className="min-w-0">
-                  <p className="truncate text-[12.5px] font-medium text-slate-800">{t.name}</p>
-                  <p className="text-[11.5px] text-slate-500">{titleCase(t.skill)} · {t.members} technicians · ETA {t.eta_min} min</p>
+                  <p className="text-[12.5px] font-medium leading-snug text-slate-800">{t.name}</p>
+                  <p className="mt-0.5 text-[11.5px] text-slate-500">{titleCase(t.skill)} · {t.members} technicians · ETA {t.eta_min} min</p>
                 </div>
-                <Badge tone={t.status === 'AVAILABLE' ? 'emerald' : 'blue'} dot>{titleCase(t.status)}</Badge>
+                <Badge tone={t.status === 'AVAILABLE' ? 'emerald' : 'blue'} dot className="mt-0.5 shrink-0">{titleCase(t.status)}</Badge>
               </div>
             ))}
           </div>
         </Card>
       </div>
-
       <Card>
         <CardHeader
           title="Asset health"
