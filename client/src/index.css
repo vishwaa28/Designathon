@@ -110,3 +110,31 @@ body {
 }
 .orb-breathe { animation: orb-breathe 3.2s ease-in-out infinite; }
 .bar-wave { animation: bar-wave 1.1s ease-in-out infinite; }
+
+/* Overview page: photo background with glass panels */
+.overview-bg {
+  background-image: linear-gradient(180deg, rgba(244, 246, 250, 0.12) 0%, rgba(244, 246, 250, 0.4) 60%, rgba(244, 246, 250, 0.55) 100%), url("/overview-bg.jpg");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+.overview-bg .card-surface {
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+.overview-bg .hub-tile {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+.overview-bg .banner-glass {
+  background: rgba(255, 251, 235, 0.6);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-color: rgba(252, 211, 77, 0.6);
+}

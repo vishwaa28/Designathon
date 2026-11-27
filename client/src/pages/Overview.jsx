@@ -40,7 +40,7 @@ function HubCard({ hub }) {
   return (
     <div
       className={cx(
-        'rounded-lg border p-3.5 transition-colors',
+        'hub-tile rounded-lg border p-3.5 transition-colors',
         hub.status === 'DISRUPTED' ? 'border-rose-200 bg-rose-50/40' : 'border-slate-200 bg-white',
       )}
     >
@@ -85,7 +85,7 @@ const STAT = {
 function StatCard({ label, value, sub, icon: Icon, tint = 'blue', dot, bar }) {
   const t = STAT[tint]
   return (
-    <div className="min-w-0 rounded-xl border border-slate-200 bg-white px-3.5 py-3 sm:px-5 sm:py-4">
+    <div className="card-surface min-w-0 rounded-xl border border-slate-200 bg-white px-3.5 py-3 sm:px-5 sm:py-4">
       <div className="flex items-center justify-between gap-2">
         <p className="truncate text-[12px] font-medium text-slate-500">{label}</p>
         <Icon size={15} className={cx('hidden shrink-0 sm:block', t.icon)} />
@@ -117,9 +117,9 @@ export default function Overview() {
   const k = data.kpis
 
   return (
-    <div className="space-y-4 p-4 sm:space-y-5 sm:p-6">
+    <div className="overview-bg space-y-4 p-4 sm:space-y-5 sm:p-6">
       {k.awaiting_approval > 0 && (
-        <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+        <div className="banner-glass flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
           <ShieldCheck size={18} className="text-amber-600" />
           <p className="flex-1 text-[13px] text-amber-900">
             <span className="font-semibold">{k.awaiting_approval} recovery plan{k.awaiting_approval > 1 ? 's' : ''}</span> waiting

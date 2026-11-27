@@ -37,7 +37,7 @@ function WorkOrderCard({ wo, onAdvance }) {
       <div className="grid gap-5 px-4 pb-5 pt-3 sm:px-5 lg:grid-cols-[1fr_220px]">
         <div className="min-w-0">
           <p className="text-[12.5px] leading-relaxed text-slate-600">{wo.description}</p>
-          <div className="mt-5 px-9">
+          <div className="mt-4">
             <RepairTimeline window={wo.repair_window} dispatchAt={wo.created_at} onSiteAt={wo.on_site_at} />
           </div>
         </div>
