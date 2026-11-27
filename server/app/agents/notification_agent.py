@@ -9,6 +9,7 @@ from app.core.llm import llm
 from app.core.utils import iso, now
 from app.data import reference as ref
 from app.data.store import is_priority, store
+from app.domain import contacts
 from app.domain import notifications as nt
 from app.services import delivery
 
@@ -135,6 +136,12 @@ def notification_node(state: dict) -> tuple[dict, dict]:
                 "self_service_url": nt.portal_link(p["pnr"], p["last_name"]),
                 "contact": bool(p.get("contact")),
             })
+        # A contact traveler holds a booking on every flight: send the real e-mail/SMS for their soonest affected flight only.
+        keep = set(contacts.earliest_per_contact([pax["id"] for _, pax, _ in outbound]))
+        outbound = [o for o in outbound if o[1]["id"] in keep]
+        for rec in records:
+            if rec["contact"] and rec["pax_id"] not in keep:
+                rec["deliveries"] = []
         store.notifications.extend(records)
 
     delivery_counts = delivery.deliver_many([(records[i], pax, english) for i, pax, english in outbound])

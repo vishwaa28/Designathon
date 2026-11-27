@@ -56,6 +56,8 @@ Base URL: `http://localhost:8000/api` (proxied as `/api` by the Vite dev server)
 
 ## E-mail and SMS delivery
 
+The four contact travelers (`contact: true`) are booked on every flight (one booking per flight, references derived from the base reference, e.g. `VSH101`). Real e-mail and SMS go out once per person per run, for the soonest affected flight; the other contact bookings get a record with `deliveries: []` that can be sent with `/notifications/{id}/resend`. `/delivery/status` lists the four people (primary bookings).
+
 Only the four contact travelers (`contact: true`) receive real messages; every other notification is a simulated record. Each delivered notification carries `deliveries: [{channel, to, status, provider, error}]` and `status` `SENT` / `PARTIAL` / `FAILED` / `NOT_CONFIGURED`.
 
 | Method | Path | Description |
