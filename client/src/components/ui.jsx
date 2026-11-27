@@ -9,7 +9,7 @@ export function cx(...parts) {
 export function Card({ className, children, ...rest }) {
   return (
     <div
-      className={cx('rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]', className)}
+      className={cx('card-surface rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]', className)}
       {...rest}
     >
       {children}
