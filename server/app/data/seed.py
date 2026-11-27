@@ -12,6 +12,7 @@ import string
 from datetime import datetime, timedelta
 
 from app.core.utils import add_min, haversine_km, round_to
+from app.data import db
 from app.data import reference as ref
 
 FLIGHT_TURN_MIN = 45
@@ -245,7 +246,8 @@ def generate(now: datetime) -> dict:
             make_pax([tid])
 
     hub_departures = [t for t in trip_list if t["origin"] == ref.HUB_AIRPORT and t["sched_dep"] >= add_min(base, 90)]
-    for i, c in enumerate(ref.CONTACT_PASSENGERS):
+    # Contact travelers come from the SQLite contacts table (seeded from the reference defaults on first run)
+    for i, c in enumerate(db.load_contacts()):
         trip = hub_departures[i % len(hub_departures)] if hub_departures else trip_list[-1]
         pid = ids.seq("P", 100001)
         ids.pnrs.add(c["pnr"])

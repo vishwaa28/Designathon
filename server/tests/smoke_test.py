@@ -45,7 +45,7 @@ def run(scenario_id: str) -> None:
         m = o["metrics"]
         print(f"   {o['id']} {o['name']:<28} score {o['score']:>3} conf {o['confidence']:.2f} cost {o['cost']['total']:>11,} "
               f"delayed {m['trips_delayed']:>2} cancel {m['trips_cancelled']:>2} rebooked {m['pax_rebooked']:>4} "
-              f"alt {m['pax_alt_mode']:>4} unacc {m['pax_unaccommodated']:>3} {'*' if o['recommended'] else ''}")
+              f"unacc {m['pax_unaccommodated']:>3} {'*' if o['recommended'] else ''}")
 
     orchestrator.push_update(iid, "restoration_delayed", "smoke")
     inc = wait_for(iid, {"AWAITING_APPROVAL"})

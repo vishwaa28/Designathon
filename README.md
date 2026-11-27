@@ -20,6 +20,8 @@ A full-stack, multi-agent operations platform for a combined airline and rail ne
 - **Infrastructure triage** – automated work orders with team dispatch, parts, safety checklist and P50 / P90 repair windows.
 - **Traveler notifications** – multilingual messages (English, Hindi, Marathi, Gujarati, Kannada, …) across app, SMS, WhatsApp and email, assisted-call queue and a self-service portal for rebooking or refunds.
 - **Voice assistant for travelers** – Azure Speech Voice Live agent in the traveler portal. Travelers speak in English, Tamil or Telugu, hear natural neural voices, can interrupt, and the assistant can explain the disruption, search alternatives, rebook or start a refund after verbal confirmation.
+- **Crowd monitor** – two looping camera feeds (`client/public/*.mp4`) stand in for the security checkpoints of Terminal 1. A frame is sent to the vision model every 20 s; people, queue length, density (people / m²) and estimated wait are stored in SQLite, smoothed with a rolling median, and turned into a rerouting plan (steer passengers to the shorter queue, open lanes) plus an advisory to passengers on at-risk departures. Counts are model estimates and the camera area, lanes and screening rates in `server/app/data/reference.py` are calibration assumptions.
+- **Real-time flights** – AviationStack departures and arrivals for Chennai on the overview and crowd monitor, cached in SQLite to protect the metered quota.
 - **Agent orchestration view** – live n8n-style canvas of the LangGraph workflow with per-node execution traces and model calls.
 
 ## Getting started
@@ -56,6 +58,11 @@ TWILIO_ACCOUNT_SID=<sid>
 TWILIO_AUTH_TOKEN=<token>
 TWILIO_FROM=<twilio number>
 # FAST2SMS_API_KEY=<key>
+
+# Real-time flights (AviationStack) and the crowd monitor
+AVIATIONSTACK_API_KEY=<key>            # free plan is metered; results are cached in SQLite for 15 min
+# CROWD_FRAME_INTERVAL_SECONDS=20      # how often a camera frame is sent to the vision model
+# DATABASE_PATH=                       # default server/data/arro.db
 ```
 
 The network is centred on Chennai (MAA airport, Chennai Central and Egmore stations). Four real contact travelers (Vishwaa Yuvaraj, Lathifunisa Tausifa, Amal Sivan, Sushmitha Saravanan) are moved onto the affected services of every disruption, so they receive the actual e-mail and SMS when the controller approves a plan. **Overview → Real e-mail & SMS delivery** shows the provider status and has a test-send button.

@@ -132,10 +132,119 @@ export default function TravelerPortal() {
   const latest = booking?.notifications?.[0]
   const settled = latest && SELF_SERVICE.has(latest.outcome)
 
+  // The booking details live inside the conversation panel, above the chat messages.
+  const details = p ? (
+    <>
+      <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4">
+        <div className="min-w-0">
+          <p className="text-[12px] text-slate-500">Passenger</p>
+          <p className="text-[16px] font-semibold text-slate-900">{p.name}</p>
+          <p className="mt-1 text-[12px] text-slate-500">
+            Updates by {p.channel.toLowerCase()} in {p.language_label}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <Badge className="font-mono">{p.pnr}</Badge>
+          <Badge>{p.cabin}</Badge>
+          {p.tier && <Badge tone="violet">{p.tier.toLowerCase()} member</Badge>}
+          <Badge tone="blue">{p.status.replace('_', ' ').toLowerCase()}</Badge>
+        </div>
+      </div>
+
+      {confirmation && (
+        <div className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+          <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-emerald-600" />
+          <div>
+            <p className="text-[14px] font-semibold text-emerald-900">{confirmation.subject}</p>
+            <p className="mt-0.5 text-[13px] text-emerald-800">{confirmation.message}</p>
+          </div>
+        </div>
+      )}
+
+      {latest && !confirmation && (settled || booking.actionable_legs.length > 0) && (
+        <div className={cx('flex gap-3 rounded-xl border px-4 py-4', settled ? 'border-slate-200 bg-white' : 'border-amber-200 bg-amber-50')}>
+          {settled ? (
+            <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-emerald-600" />
+          ) : (
+            <AlertTriangle size={20} className="mt-0.5 shrink-0 text-amber-600" />
+          )}
+          <div className="min-w-0">
+            <p className={cx('text-[14px] font-semibold', settled ? 'text-slate-900' : 'text-amber-900')}>{latest.subject}</p>
+            <p className={cx('mt-0.5 break-words text-[13px] leading-relaxed', settled ? 'text-slate-600' : 'text-amber-900/90')}>{latest.message}</p>
+          </div>
+        </div>
+      )}
+
+      {p.legs.map((leg) => (
+        <Leg
+          key={leg.id}
+          leg={leg}
+          actionable={booking.actionable_legs.includes(leg.id)}
+          attention={!settled && booking.actionable_legs.includes(leg.id)}
+          active={managing === leg.id}
+          onManage={() => manage(leg.id)}
+        />
+      ))}
+      {!p.legs.length && <div className="rounded-xl border border-slate-200 bg-white p-4 text-[13px] text-slate-600">This booking has been refunded.</div>}
+
+      {managing && (
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="border-b border-slate-100 px-4 py-3">
+            <p className="text-[14px] font-semibold text-slate-900">Choose a new option</p>
+            <p className="text-[12.5px] text-slate-500">Flights with open seats in the next 24 hours.</p>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {!alts && <p className="px-4 py-6 text-center text-[13px] text-slate-400">Searching…</p>}
+            {alts?.items.map((a) => (
+              <div key={a.id} className="flex items-center gap-3 px-4 py-3">
+                <span className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 sm:flex">
+                  <Plane size={16} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13.5px] font-semibold text-slate-900">
+                    {fmtTime(a.est_dep)} → {fmtTime(a.est_arr)}{' '}
+                    <span className="font-mono text-[12px] font-normal text-slate-500">{a.number}</span>
+                  </p>
+                  <p className="text-[12px] text-slate-500">
+                    {a.origin} – {a.destination} · {a.seats_left} seats left
+                  </p>
+                </div>
+                <Button size="sm" loading={busy} onClick={() => rebook(a.id)}>Select</Button>
+              </div>
+            ))}
+            {alts && !alts.items.length && (
+              <p className="px-4 py-6 text-center text-[13px] text-slate-500">No alternatives with open seats. You can request a full refund.</p>
+            )}
+          </div>
+          <div className="flex flex-wrap justify-between gap-2 border-t border-slate-100 px-4 py-3">
+            <Button variant="ghost" size="sm" onClick={() => setManaging(null)}>Keep current booking</Button>
+            <Button variant="danger" size="sm" icon={Undo2} onClick={refund}>Request full refund</Button>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-2.5 text-[13px] font-semibold text-slate-900">
+          <BellRing size={14} /> Messages sent to you
+        </div>
+        <div className="divide-y divide-slate-100">
+          {booking.notifications.map((n) => (
+            <div key={n.id} className="px-4 py-3">
+              <p className="text-[12.5px] font-medium text-slate-800">{n.subject}</p>
+              <p className="mt-0.5 break-words text-[12px] leading-relaxed text-slate-600">{n.message}</p>
+              <p className="mt-1 text-[11px] text-slate-400">{fmtTime(n.sent_at)} · {n.channel.toLowerCase()}</p>
+            </div>
+          ))}
+          {!booking.notifications.length && <p className="px-4 py-4 text-[12.5px] text-slate-400">No messages for this booking.</p>}
+        </div>
+      </div>
+    </>
+  ) : null
+
   return (
     <div className="relative min-h-full bg-canvas">
       <div className="absolute inset-x-0 top-0 h-[230px] bg-navy-900" />
-      <header className="relative mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
+      <header className="relative mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex min-w-0 items-center gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white"><Plane size={18} /></span>
           <div className="min-w-0 leading-tight">
@@ -148,11 +257,13 @@ export default function TravelerPortal() {
         </a>
       </header>
 
-      <main className="relative mx-auto max-w-5xl space-y-4 px-3 pb-16 sm:space-y-5 sm:px-6">
+      <main className="relative mx-auto max-w-6xl space-y-4 px-3 pb-16 sm:space-y-5 sm:px-6">
         <Card className="p-4 sm:p-6">
-          <h1 className="text-[18px] font-semibold tracking-tight text-slate-900 sm:text-[20px]">Find your booking</h1>
-          <p className="mt-1 text-[13px] text-slate-500">Check live status, see changes to your journey and rebook yourself without queuing at the desk.</p>
-          <form onSubmit={lookup} className="mt-5 grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+            <h1 className="text-[18px] font-semibold tracking-tight text-slate-900 sm:text-[20px]">Find your booking</h1>
+            <p className="text-[13px] text-slate-500">Check live status, see changes and rebook yourself without queuing at the desk.</p>
+          </div>
+          <form onSubmit={lookup} className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end sm:gap-4">
             <Field label="Booking reference (PNR)">
               <input className={cx(inputClass, 'h-10 font-mono uppercase')} value={pnr} onChange={(e) => setPnr(e.target.value.toUpperCase())} placeholder="e.g. K7Q2MX" />
             </Field>
@@ -164,115 +275,7 @@ export default function TravelerPortal() {
           {error && <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-[13px] text-rose-700">{error}</p>}
         </Card>
 
-        <VoiceAgent key={booking?.passenger?.pnr || 'none'} booking={booking} onBookingChanged={refreshBooking} />
-
-        {confirmation && (
-          <div className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 sm:px-5">
-            <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-emerald-600" />
-            <div>
-              <p className="text-[14px] font-semibold text-emerald-900">{confirmation.subject}</p>
-              <p className="mt-0.5 text-[13px] text-emerald-800">{confirmation.message}</p>
-            </div>
-          </div>
-        )}
-
-        {p && (
-          <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
-            <div className="space-y-4">
-              {latest && !confirmation && (settled || booking.actionable_legs.length > 0) && (
-                <div className={cx('flex gap-3 rounded-xl border px-4 py-4 sm:px-5', settled ? 'border-slate-200 bg-white' : 'border-amber-200 bg-amber-50')}>
-                  {settled ? (
-                    <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-emerald-600" />
-                  ) : (
-                    <AlertTriangle size={20} className="mt-0.5 shrink-0 text-amber-600" />
-                  )}
-                  <div>
-                    <p className={cx('text-[14px] font-semibold', settled ? 'text-slate-900' : 'text-amber-900')}>{latest.subject}</p>
-                    <p className={cx('mt-0.5 text-[13px] leading-relaxed', settled ? 'text-slate-600' : 'text-amber-900/90')}>{latest.message}</p>
-                  </div>
-                </div>
-              )}
-              {p.legs.map((leg) => (
-                <Leg
-                  key={leg.id}
-                  leg={leg}
-                  actionable={booking.actionable_legs.includes(leg.id)}
-                  attention={!settled && booking.actionable_legs.includes(leg.id)}
-                  active={managing === leg.id}
-                  onManage={() => manage(leg.id)}
-                />
-              ))}
-              {!p.legs.length && <Card className="p-5 text-[13px] text-slate-600">This booking has been refunded.</Card>}
-
-              {managing && (
-                <Card>
-                  <div className="border-b border-slate-100 px-5 py-3.5">
-                    <p className="text-[14px] font-semibold text-slate-900">Choose a new option</p>
-                    <p className="text-[12.5px] text-slate-500">Flights with open seats in the next 24 hours.</p>
-                  </div>
-                  <div className="divide-y divide-slate-100">
-                    {!alts && <p className="px-5 py-6 text-center text-[13px] text-slate-400">Searching…</p>}
-                    {alts?.items.map((a) => (
-                      <div key={a.id} className="flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-5">
-                        <span className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 sm:flex">
-                          <Plane size={16} />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[13.5px] font-semibold text-slate-900">
-                            {fmtTime(a.est_dep)} → {fmtTime(a.est_arr)}{' '}
-                            <span className="font-mono text-[12px] font-normal text-slate-500">{a.number}</span>
-                          </p>
-                          <p className="text-[12px] text-slate-500">
-                            {a.origin} – {a.destination} · {a.seats_left} seats left
-                          </p>
-                        </div>
-                        <Button size="sm" loading={busy} onClick={() => rebook(a.id)}>Select</Button>
-                      </div>
-                    ))}
-                    {alts && !alts.items.length && (
-                      <p className="px-5 py-6 text-center text-[13px] text-slate-500">No alternatives with open seats. You can request a full refund.</p>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap justify-between gap-2 border-t border-slate-100 px-4 py-3 sm:px-5">
-                    <Button variant="ghost" size="sm" onClick={() => setManaging(null)}>Keep current booking</Button>
-                    <Button variant="danger" size="sm" icon={Undo2} onClick={refund}>Request full refund</Button>
-                  </div>
-                </Card>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <Card className="p-5">
-                <p className="text-[12px] text-slate-500">Passenger</p>
-                <p className="text-[16px] font-semibold text-slate-900">{p.name}</p>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  <Badge className="font-mono">{p.pnr}</Badge>
-                  <Badge>{p.cabin}</Badge>
-                  {p.tier && <Badge tone="violet">{p.tier.toLowerCase()} member</Badge>}
-                  <Badge tone="blue">{p.status.replace('_', ' ').toLowerCase()}</Badge>
-                </div>
-                <p className="mt-3 text-[12px] text-slate-500">
-                  Updates by {p.channel.toLowerCase()} in {p.language_label}
-                </p>
-              </Card>
-              <Card>
-                <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 text-[13px] font-semibold text-slate-900">
-                  <BellRing size={14} /> Messages
-                </div>
-                <div className="divide-y divide-slate-100">
-                  {booking.notifications.map((n) => (
-                    <div key={n.id} className="px-5 py-3">
-                      <p className="text-[12.5px] font-medium text-slate-800">{n.subject}</p>
-                      <p className="mt-0.5 text-[12px] leading-relaxed text-slate-600">{n.message}</p>
-                      <p className="mt-1 text-[11px] text-slate-400">{fmtTime(n.sent_at)} · {n.channel.toLowerCase()}</p>
-                    </div>
-                  ))}
-                  {!booking.notifications.length && <p className="px-5 py-5 text-[12.5px] text-slate-400">No messages for this booking.</p>}
-                </div>
-              </Card>
-            </div>
-          </div>
-        )}
+        <VoiceAgent key={booking?.passenger?.pnr || 'none'} booking={booking} onBookingChanged={refreshBooking} details={details} />
       </main>
     </div>
   )

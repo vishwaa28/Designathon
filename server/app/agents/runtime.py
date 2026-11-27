@@ -8,6 +8,7 @@ from typing import Any, Callable
 from app.config import settings
 from app.core.events import bus
 from app.core.utils import iso, now
+from app.data import db
 from app.data.store import store
 
 
@@ -16,6 +17,8 @@ def update_incident(incident_id: str, **fields: Any) -> dict:
         inc = store.incidents[incident_id]
         inc.update(fields)
         inc["updated_at"] = iso(now())
+    if "status" in fields:
+        db.log_incident(inc)
     bus.publish("incident.updated", {"id": incident_id, "status": inc["status"], "fields": list(fields)})
     return inc
 

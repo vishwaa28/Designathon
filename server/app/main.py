@@ -16,8 +16,9 @@ if _SERVER_DIR not in sys.path:
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import delivery, incidents, operations, stream, traveler, voice
+from app.api import crowd, delivery, flights, incidents, operations, passengers, stream, traveler, voice
 from app.config import settings
+from app.data import db
 from app.services.feeds import telemetry_loop
 from app.services.weather import refresh_weather
 
@@ -33,6 +34,7 @@ async def _weather_loop() -> None:
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    db.init()
     await refresh_weather()
     tasks = [asyncio.create_task(telemetry_loop()), asyncio.create_task(_weather_loop())]
     yield
@@ -49,7 +51,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for module in (operations, incidents, traveler, stream, voice, delivery):
+for module in (operations, incidents, traveler, stream, voice, delivery, crowd, flights, passengers):
     app.include_router(module.router, prefix="/api")
 
 

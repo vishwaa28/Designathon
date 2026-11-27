@@ -5,6 +5,15 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+# Trust the operating system certificate store (corporate proxies re-sign TLS traffic with a private root CA
+# that certifi does not know). Verification stays on; this only changes which roots are trusted.
+try:
+    import truststore
+
+    truststore.inject_into_ssl()
+except Exception:  # noqa: BLE001 - optional dependency, fall back to the default bundle
+    pass
+
 SERVER_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SERVER_DIR.parent
 
@@ -54,6 +63,19 @@ class Settings:
     twilio_from = _env("TWILIO_FROM", "TWILIO_PHONE_NUMBER")
     twilio_messaging_service_sid = _env("TWILIO_MESSAGING_SERVICE_SID")
     fast2sms_api_key = _env("FAST2SMS_API_KEY")
+
+    # SQLite (stdlib). Vercel's filesystem is read-only except /tmp, so the file lives there when deployed.
+    database_path = _env("DATABASE_PATH") or (
+        "/tmp/arro.db" if os.getenv("VERCEL") else str(SERVER_DIR / "data" / "arro.db"))
+
+    # AviationStack real-time flights. The free plan allows ~100 calls a month, so results are cached in SQLite.
+    aviationstack_key = _env("AVIATIONSTACK_API_KEY", "AVIATION_STACK_API", "aviation_stack_api", "AVIATIONSTACK_ACCESS_KEY")
+    aviationstack_base = (_env("AVIATIONSTACK_BASE_URL", default="https://api.aviationstack.com/v1") or "").rstrip("/")
+    aviationstack_cache_s = int(_env("AVIATIONSTACK_CACHE_SECONDS", default="900"))
+    aviationstack_airport = (_env("AVIATIONSTACK_AIRPORT", default="MAA") or "MAA").upper()
+
+    # Crowd monitor: how often the browser sends a camera frame to the vision model
+    crowd_frame_interval_s = int(_env("CROWD_FRAME_INTERVAL_SECONDS", default="20"))
 
     agent_step_delay_s = float(_env("AGENT_STEP_DELAY_SECONDS", default="0.8"))
     weather_api_enabled = (_env("WEATHER_API_ENABLED", default="true") or "true").lower() == "true"

@@ -202,6 +202,7 @@ class Store:
             "cabin": p["cabin"],
             "status": p["status"],
             "priority": is_priority(p),
+            "contact": bool(p.get("contact")),
         }
         if include_legs:
             view["legs"] = [self.trip_view(self.trips[t]) | {"seat": self._seat_of(p, t)} for t in p["legs"]]

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import DeliveryCard from '../components/DeliveryCard'
 import LiveFeed from '../components/LiveFeed'
+import LiveFlights from '../components/LiveFlights'
 import ScenarioLauncher from '../components/ScenarioLauncher'
 import {
   Badge,
@@ -134,6 +135,8 @@ export default function Overview() {
         </Card>
         <LiveFeed className="h-[420px]" />
       </div>
+
+      <LiveFlights />
 
       <DeliveryCard />
 

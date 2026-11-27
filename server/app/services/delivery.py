@@ -17,6 +17,7 @@ import httpx
 
 from app.config import settings
 from app.core.utils import iso, now
+from app.data import db
 
 log = logging.getLogger("arro.delivery")
 executor = ThreadPoolExecutor(max_workers=8, thread_name_prefix="delivery")
@@ -199,6 +200,7 @@ def deliver(record: dict, passenger: dict, english: str | None = None) -> list[d
     results = [j.result() for j in jobs if j in done]
     record["deliveries"] = results
     record["status"] = _overall(results)
+    db.log_delivery(record, results)
     return results
 
 
