@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   AlertTriangle,
   CalendarClock,
@@ -18,14 +18,14 @@ import ScenarioLauncher from './ScenarioLauncher'
 import { Button, cx } from './ui'
 
 const NAV = [
-  { to: '/', label: 'Operations overview', icon: LayoutDashboard, end: true },
+  { to: '/overview', label: 'Operations overview', icon: LayoutDashboard, end: true },
   { to: '/incidents', label: 'Incidents', icon: AlertTriangle, badge: 'awaiting' },
   { to: '/schedule', label: 'Schedule & bookings', icon: CalendarClock },
   { to: '/assets', label: 'Assets & work orders', icon: Wrench },
 ]
 
 const TITLES = {
-  '/': ['Operations overview', 'Chennai hub: live air network picture'],
+  '/overview': ['Operations overview', 'Chennai hub: live air network picture'],
   '/incidents': ['Incidents', 'Detected disruptions and recovery decisions'],
   '/schedule': ['Schedule & bookings', 'Flights, crew and passengers'],
   '/assets': ['Assets & work orders', 'Infrastructure health and field maintenance'],
@@ -67,7 +67,9 @@ function Sidebar({ awaiting, connected, onReset, resetting, onNavigate, onClose 
   return (
     <aside className="flex h-full w-[264px] shrink-0 flex-col bg-navy-900 lg:w-[244px]">
       <div className="flex items-center justify-between px-5 pb-6 pt-5">
-        <Logo dark />
+        <Link to="/" onClick={onNavigate} title="Back to home" className="rounded-lg">
+          <Logo dark />
+        </Link>
         {onClose && (
           <button onClick={onClose} className="rounded-md p-1.5 text-slate-400 hover:bg-white/10 hover:text-white lg:hidden" aria-label="Close menu">
             <X size={18} />
@@ -143,7 +145,7 @@ export default function AppShell() {
   const awaiting = (incidents?.items || []).filter((i) => i.status === 'AWAITING_APPROVAL').length
 
   const base = '/' + (location.pathname.split('/')[1] || '')
-  const [title, subtitle] = TITLES[base] || TITLES['/']
+  const [title, subtitle] = TITLES[base] || TITLES['/overview']
 
   useEffect(() => {
     if (!menuOpen) return undefined
@@ -157,7 +159,7 @@ export default function AppShell() {
     setResetting(true)
     try {
       await api.post('/simulation/reset')
-      window.location.assign('/')
+      window.location.assign('/overview')
     } finally {
       setResetting(false)
     }
