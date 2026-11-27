@@ -1,7 +1,7 @@
 """Feed triggers, incident lifecycle, controller decisions and agent graph endpoints."""
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 
 from app.agents.approval import UPDATE_TYPES
 from app.agents.graph import graph_structure
@@ -27,9 +27,9 @@ def live_feed(limit: int = Query(50, le=150)):
 
 
 @router.post("/feeds/trigger", status_code=201)
-def trigger(body: TriggerRequest):
+def trigger(body: TriggerRequest, background: BackgroundTasks):
     try:
-        incident = orchestrator.trigger_scenario(body.scenario_id)
+        incident = orchestrator.trigger_scenario(body.scenario_id, background.add_task)
     except KeyError as exc:
         raise HTTPException(404, "Unknown scenario") from exc
     except ValueError as exc:
@@ -57,14 +57,14 @@ def get_incident(incident_id: str):
 
 
 @router.post("/incidents/{incident_id}/decision", status_code=202)
-def decide(incident_id: str, body: DecisionRequest):
+def decide(incident_id: str, body: DecisionRequest, background: BackgroundTasks):
     if body.action == "approve" and not body.option_id:
         raise HTTPException(422, "option_id is required to approve")
     decision = body.model_dump()
     if body.preferences:
         decision["preferences"] = body.preferences.model_dump()
     try:
-        orchestrator.submit_decision(incident_id, decision)
+        orchestrator.submit_decision(incident_id, decision, background.add_task)
     except KeyError as exc:
         raise HTTPException(404, "Incident not found") from exc
     except WorkflowError as exc:
@@ -73,9 +73,9 @@ def decide(incident_id: str, body: DecisionRequest):
 
 
 @router.post("/incidents/{incident_id}/updates", status_code=202)
-def push_update(incident_id: str, body: UpdateRequest):
+def push_update(incident_id: str, body: UpdateRequest, background: BackgroundTasks):
     try:
-        orchestrator.push_update(incident_id, body.update_type, body.controller)
+        orchestrator.push_update(incident_id, body.update_type, body.controller, background.add_task)
     except KeyError as exc:
         raise HTTPException(404, "Incident not found") from exc
     except WorkflowError as exc:

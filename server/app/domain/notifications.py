@@ -7,7 +7,18 @@ from app.core.utils import parse_dt
 from app.data import reference as ref
 from app.data.store import is_priority, store
 
-PORTAL_BASE = os.getenv("PORTAL_BASE_URL", "http://localhost:5173")
+
+def _portal_base() -> str:
+    if explicit := os.getenv("PORTAL_BASE_URL"):
+        return explicit.rstrip("/")
+    if os.getenv("VERCEL_ENV") == "production" and os.getenv("VERCEL_PROJECT_PRODUCTION_URL"):
+        return f"https://{os.environ['VERCEL_PROJECT_PRODUCTION_URL']}"
+    if os.getenv("VERCEL_URL"):
+        return f"https://{os.environ['VERCEL_URL']}"
+    return "http://localhost:5173"
+
+
+PORTAL_BASE = _portal_base()
 
 OUTCOME_TYPES = ["DELAYED", "REBOOKED", "ALT_MODE", "BUS_BRIDGE", "DIVERTED", "UNACCOMMODATED"]
 PLACEHOLDERS = "{name} {trip} {route} {delay} {new_trip} {new_time} {new_arr} {via} {link}"
