@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Menu,
   RotateCcw,
-  Workflow,
   Wrench,
   X,
   Zap,
@@ -15,23 +14,20 @@ import {
 import { api } from '../lib/api'
 import { useStreamStatus } from '../lib/stream'
 import { useApi } from '../lib/useApi'
-import ProviderSwitch from './ProviderSwitch'
 import ScenarioLauncher from './ScenarioLauncher'
 import { Button, cx } from './ui'
 
 const NAV = [
   { to: '/', label: 'Operations overview', icon: LayoutDashboard, end: true },
   { to: '/incidents', label: 'Incidents', icon: AlertTriangle, badge: 'awaiting' },
-  { to: '/orchestration', label: 'Agent orchestration', icon: Workflow },
   { to: '/schedule', label: 'Schedule & bookings', icon: CalendarClock },
   { to: '/assets', label: 'Assets & work orders', icon: Wrench },
 ]
 
 const TITLES = {
-  '/': ['Operations overview', 'Chennai hub: live air and rail picture'],
+  '/': ['Operations overview', 'Chennai hub: live air network picture'],
   '/incidents': ['Incidents', 'Detected disruptions and recovery decisions'],
-  '/orchestration': ['Agent orchestration', 'Execution graph of the recovery workflow'],
-  '/schedule': ['Schedule & bookings', 'Flights, trains, crew and passengers'],
+  '/schedule': ['Schedule & bookings', 'Flights, crew and passengers'],
   '/assets': ['Assets & work orders', 'Infrastructure health and field maintenance'],
 }
 
@@ -120,9 +116,6 @@ function Sidebar({ awaiting, connected, onReset, resetting, onNavigate, onClose 
       </nav>
 
       <div className="mt-auto space-y-3 border-t border-white/[0.06] p-4">
-        <div className="lg:hidden">
-          <ProviderSwitch dark />
-        </div>
         <div className="flex items-center gap-2 text-[12px] text-slate-400">
           <span className={cx('h-2 w-2 rounded-full', connected ? 'bg-emerald-400' : 'bg-rose-400')} />
           {connected ? 'Live feeds connected' : 'Reconnecting to feeds'}
@@ -199,10 +192,6 @@ export default function AppShell() {
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-[15px] font-semibold text-slate-900 sm:text-[16px]">{title}</h1>
             <p className="hidden truncate text-[12px] text-slate-500 sm:block">{subtitle}</p>
-          </div>
-          <div className="hidden items-center gap-4 lg:flex">
-            <ProviderSwitch />
-            <div className="h-8 w-px bg-slate-200" />
           </div>
           <div className="hidden md:block">
             <Clock />

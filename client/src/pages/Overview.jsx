@@ -9,7 +9,6 @@ import {
   Clock3,
   Plane,
   ShieldCheck,
-  TrainFront,
   Users,
   Wrench,
   Zap,
@@ -50,7 +49,7 @@ function HubCard({ hub }) {
     >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
-          {hub.mode === 'FLIGHT' ? <Plane size={14} className="text-slate-400" /> : <TrainFront size={14} className="text-slate-400" />}
+          <Plane size={14} className="text-slate-400" />
           <span className="font-mono text-[14px] font-semibold text-slate-900">{hub.code}</span>
         </div>
         <Badge tone={s.tone} dot>{s.label}</Badge>
@@ -103,7 +102,7 @@ export default function Overview() {
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        <Kpi label="Services today" value={k.trips_total} sub={`${k.flights} flights · ${k.trains} trains`} icon={CalendarClock} />
+        <Kpi label="Services today" value={k.trips_total} sub={`${k.flights} flights`} icon={CalendarClock} />
         <Kpi
           label="On-time performance"
           value={`${k.on_time_pct}%`}
@@ -152,8 +151,7 @@ export default function Overview() {
                   contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12, boxShadow: '0 4px 12px rgba(15,23,42,0.08)' }}
                 />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="flights" name="Flights" stackId="s" fill="#2f5bea" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="trains" name="Trains" stackId="s" fill="#8eabf7" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="flights" name="Flights" stackId="s" fill="#2f5bea" radius={[3, 3, 0, 0]} />
                 <Bar dataKey="delayed" name="Delayed" fill="#f59e0b" radius={[3, 3, 0, 0]} />
                 <Bar dataKey="cancelled" name="Cancelled" fill="#e11d48" radius={[3, 3, 0, 0]} />
               </BarChart>

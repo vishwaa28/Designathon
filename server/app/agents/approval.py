@@ -47,7 +47,7 @@ def apply_update(state: dict, update_type: str) -> tuple[dict, str]:
         if scope["type"] != "AIRPORT_CLOSURE":
             adjustments["window_shift_min"] = adjustments.get("window_shift_min", 0) + spec["shift"]
     if update_type == "crew_shortage":
-        node = scope.get("node") or scope.get("corridor", [None])[0]
+        node = scope.get("node")
         adjustments["reserve_unavailable"] = sorted(set(adjustments.get("reserve_unavailable", [])) | {reserve_base(node)})
     if "inventory_factor" in spec:
         adjustments["inventory_factor"] = spec["inventory_factor"]

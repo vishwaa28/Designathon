@@ -12,7 +12,7 @@ from app.domain import contacts, network
 from app.domain.recovery import COST
 
 SYSTEM = ("You are the network impact analyst in an operations control centre. Explain cascading effects "
-          "of a disruption across aircraft/rake rotations, crew duty limits and passenger connections in plain operational language.")
+          "of a disruption across aircraft rotations, crew duty limits and passenger connections in plain operational language.")
 
 
 def _delay_band(d: int) -> str:
@@ -95,15 +95,14 @@ def impact_node(state: dict) -> tuple[dict, dict]:
                                  "missed_connection": bool(e["missed"])})
         priority.sort(key=lambda x: (x["ssr"] is None, -(x["delay_min"] or 0)))
 
-        baseline = sum(d * COST["delay_per_min"][store.trips[t]["mode"]] for t, d in delays.items())
-        baseline += sum(COST["care_2h"]["FLIGHT"] for e in effects.values() if e["delay"] >= 120)
-        baseline += len(missed) * (COST["hotel"]["FLIGHT"] + COST["rebook"]["FLIGHT"])
+        baseline = sum(d * COST["delay_per_min"] for t, d in delays.items())
+        baseline += sum(COST["care_2h"] for e in effects.values() if e["delay"] >= 120)
+        baseline += len(missed) * (COST["hotel"] + COST["rebook"])
 
     summary = {
         "trips_direct": sum(1 for t in trips if t["impact_type"] == "DIRECT"),
         "trips_cascade": sum(1 for t in trips if t["impact_type"] == "CASCADE"),
-        "flights": sum(1 for t in trips if t["mode"] == "FLIGHT"),
-        "trains": sum(1 for t in trips if t["mode"] == "TRAIN"),
+        "flights": len(trips),
         "pax_affected": len(effects),
         "missed_connections": len(missed),
         "crew_pairings_breached": len(breaches),

@@ -116,8 +116,8 @@ export function Button({ variant = 'primary', size = 'md', icon: Icon, loading, 
         SIZES[size],
         className,
       )}
-      disabled={loading || rest.disabled}
       {...rest}
+      disabled={loading || rest.disabled}
     >
       {loading ? <Loader2 size={15} className="animate-spin" /> : Icon && <Icon size={15} />}
       {children}

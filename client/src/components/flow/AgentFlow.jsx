@@ -1,15 +1,13 @@
 import { useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
 import { Background, Controls, MarkerType, ReactFlow } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { ExternalLink, ListTree, Workflow, Zap } from 'lucide-react'
-import ExecutionLog from '../components/flow/ExecutionLog'
-import { AgentNode, TerminalNode } from '../components/flow/AgentNode'
-import Inspector from '../components/flow/Inspector'
-import ScenarioLauncher from '../components/ScenarioLauncher'
-import { Button, Card, CardHeader, IncidentStatus, PageLoader, cx } from '../components/ui'
-import { fmtDuration } from '../lib/format'
-import { useApi } from '../lib/useApi'
+import { ListTree, Workflow } from 'lucide-react'
+import ExecutionLog from './ExecutionLog'
+import { AgentNode, TerminalNode } from './AgentNode'
+import Inspector from './Inspector'
+import { Card, CardHeader, PageLoader, cx } from '../ui'
+import { fmtDuration } from '../../lib/format'
+import { useApi } from '../../lib/useApi'
 
 const POSITIONS = {
   __start__: { x: 0, y: 167 },
@@ -106,22 +104,14 @@ function buildFlow(graph, inc, selectedNode) {
   return { nodes, edges, byNode }
 }
 
-export default function Orchestration() {
-  const { id: paramId } = useParams()
-  const navigate = useNavigate()
+/** Agent orchestration view for one incident: LangGraph execution graph, execution log and node inspector. */
+export default function AgentFlow({ inc }) {
   const { data: graph } = useApi('/agents/graph')
-  const { data: list } = useApi('/incidents', { refreshOn: ['incident.created', 'simulation.'] })
-  const incidentId = paramId || list?.items?.[0]?.id
-  const { data: inc } = useApi(incidentId ? `/incidents/${incidentId}` : null, {
-    refreshOn: ['agent.', 'incident.updated'],
-    match: (e) => (e.data.id || e.data.incident_id) === incidentId,
-  })
   const [selectedNode, setSelectedNode] = useState('detection')
   const [selectedExec, setSelectedExec] = useState(null)
-  const [launcher, setLauncher] = useState(false)
 
   const flow = useMemo(() => (graph ? buildFlow(graph, inc, selectedNode) : null), [graph, inc, selectedNode])
-  if (!graph || !list) return <PageLoader />
+  if (!graph) return <PageLoader />
 
   const trace = inc?.trace || []
   const calls = trace.flatMap((e) => e.llm || [])
@@ -131,34 +121,7 @@ export default function Orchestration() {
   const exec = selectedExec && selectedExec.node === selectedNode ? execs.find((e) => e.id === selectedExec.id) : null
 
   return (
-    <div className="space-y-4 p-4 sm:space-y-5 sm:p-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
-          <span className="text-[12.5px] font-medium text-slate-500">Incident</span>
-          <select
-            value={incidentId || ''}
-            onChange={(e) => navigate(`/orchestration/${e.target.value}`)}
-            className="h-9 min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 text-[13px] focus:border-brand-500 focus:outline-none sm:min-w-[320px]"
-          >
-            {!list.items.length && <option value="">No incidents yet</option>}
-            {list.items.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.id} · {i.title}
-              </option>
-            ))}
-          </select>
-          {inc && <IncidentStatus status={inc.status} />}
-        </div>
-        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-          {inc && (
-            <Button variant="secondary" icon={ExternalLink} onClick={() => navigate(`/incidents/${inc.id}`)}>
-              Incident workspace
-            </Button>
-          )}
-          <Button icon={Zap} onClick={() => setLauncher(true)}>Inject event</Button>
-        </div>
-      </div>
-
+    <div className="space-y-4 sm:space-y-5">
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-5">
         {[
           ['Node executions', trace.length],
@@ -239,7 +202,6 @@ export default function Orchestration() {
           />
         </Card>
       </div>
-      <ScenarioLauncher open={launcher} onClose={() => setLauncher(false)} />
     </div>
   )
 }

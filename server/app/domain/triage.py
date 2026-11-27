@@ -6,28 +6,6 @@ from app.data import reference as ref
 from app.data.store import store
 
 FAULT_MODELS = {
-    "SIGNAL": {
-        "skill": "SIGNALLING", "diagnosis_min": 20,
-        "causes": [
-            {"cause": "Relay contact degradation in route-relay interlocking", "probability": 0.46, "repair": (60, 110), "part": "Q-series plug-in relay", "local": True},
-            {"cause": "Insulated rail joint failure dropping the track circuit", "probability": 0.31, "repair": (90, 170), "part": "Glued insulated rail joint kit", "local": True},
-            {"cause": "Power fluctuation in relay-room integrated power supply", "probability": 0.23, "repair": (40, 80), "part": "IPS rectifier module", "local": False},
-        ],
-        "safety": ["Block section protected; trains on Paper Line Clear authority only",
-                   "Disconnection memo with station master before touching interlocking",
-                   "Lookout person posted on both lines during track work"],
-        "checklist": ["Megger test on relay group", "Check IRJ insulation at km 18/4", "Verify IPS output voltage", "Joint testing with station master before reconnection"],
-    },
-    "TRACK_CIRCUIT": {
-        "skill": "TRACK", "diagnosis_min": 30,
-        "causes": [
-            {"cause": "Ballast washout and water ingress at culvert", "probability": 0.55, "repair": (150, 300), "part": "Ballast rake and boulder packing", "local": True},
-            {"cause": "Track circuit shunt failure from submerged rails", "probability": 0.30, "repair": (60, 120), "part": "Track circuit feed set", "local": True},
-            {"cause": "Embankment slip near cutting", "probability": 0.15, "repair": (240, 420), "part": "Sand bags and gabions", "local": False},
-        ],
-        "safety": ["No movement until water recedes below rail level", "Patrolman verification of formation", "Speed restriction 20 km/h after restoration"],
-        "checklist": ["Water level monitoring every 15 min", "Ballast profile check", "Track circuit reset and testing", "Joint inspection with permanent-way inspector"],
-    },
     "RUNWAY": {
         "skill": "AIRSIDE", "diagnosis_min": 10,
         "causes": [

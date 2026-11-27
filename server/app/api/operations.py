@@ -16,8 +16,7 @@ from app.services.weather import refresh_weather
 router = APIRouter()
 
 ACTIVE = {"DETECTING", "ANALYZING", "PLANNING", "AWAITING_APPROVAL", "PROCESSING", "REPLANNING", "EXECUTING"}
-HUB_NODES = ["MAA", "R:MAS", "R:MS", "BLR", "HYD", "CJB", "COK", "R:SBC"]
-CITY_AIRPORT = {"R:MAS": "MAA", "R:MS": "MAA", "R:SBC": "BLR"}
+HUB_NODES = ["MAA", "BLR", "HYD", "CJB", "COK", "DEL", "BOM", "CCU"]
 
 
 @router.get("/health")
@@ -62,8 +61,6 @@ def dashboard():
         for i in active:
             ev = i["event"]
             disrupted_nodes.add(ev["location"])
-            for c in ev.get("corridor") or []:
-                disrupted_nodes.add(c)
 
         hubs = []
         for node in HUB_NODES:
@@ -73,10 +70,10 @@ def dashboard():
             delayed = sum(1 for t in moves if t["delay_min"] >= 15 and not t["cancelled"])
             cancelled = sum(1 for t in moves if t["cancelled"])
             hubs.append({
-                "code": ref.display_code(node), "city": ref.city_of(node), "mode": "TRAIN" if node.startswith("R:") else "FLIGHT",
+                "code": ref.display_code(node), "city": ref.city_of(node),
                 "name": ref.place(node)["name"], "movements_3h": len(moves), "delayed": delayed, "cancelled": cancelled,
                 "status": "DISRUPTED" if node in disrupted_nodes else ("STRAINED" if delayed >= 3 else "NORMAL"),
-                "weather": store.weather.get(node) or store.weather.get(CITY_AIRPORT.get(node, "")),
+                "weather": store.weather.get(node),
             })
 
         hourly = []
@@ -86,8 +83,7 @@ def dashboard():
             deps = [t for t in trips if h0 <= t["sched_dep"] < h1]
             hourly.append({
                 "hour": h0.strftime("%H:%M"),
-                "flights": sum(1 for t in deps if t["mode"] == "FLIGHT"),
-                "trains": sum(1 for t in deps if t["mode"] == "TRAIN"),
+                "flights": len(deps),
                 "delayed": sum(1 for t in deps if t["delay_min"] >= 15 and not t["cancelled"]),
                 "cancelled": sum(1 for t in deps if t["cancelled"]),
             })
@@ -98,8 +94,7 @@ def dashboard():
             "generated_at": iso(ref_time),
             "kpis": {
                 "trips_total": len(trips),
-                "flights": sum(1 for t in trips if t["mode"] == "FLIGHT"),
-                "trains": sum(1 for t in trips if t["mode"] == "TRAIN"),
+                "flights": len(trips),
                 "on_time_pct": round(100 * on_time / max(1, len(live)), 1),
                 "delayed": sum(1 for t in live if t["delay_min"] >= 15),
                 "cancelled": sum(1 for t in trips if t["cancelled"]),
@@ -122,7 +117,7 @@ def incident_summary(i: dict) -> dict:
     impact = (i.get("impact") or {}).get("summary") or {}
     rec = i.get("recommendation") or {}
     return {
-        "id": i["id"], "title": i["title"], "category": i["category"], "mode": i["mode"],
+        "id": i["id"], "title": i["title"], "category": i["category"],
         "severity": i["severity"], "status": i["status"], "location": i["location"],
         "created_at": i["created_at"], "updated_at": i["updated_at"], "resolved_at": i.get("resolved_at"),
         "plan_version": i["plan_version"], "pax_affected": impact.get("pax_affected"),
@@ -133,13 +128,11 @@ def incident_summary(i: dict) -> dict:
 
 
 @router.get("/trips")
-def list_trips(mode: str | None = None, status: str | None = None, q: str | None = None,
+def list_trips(status: str | None = None, q: str | None = None,
                disrupted: bool = False, limit: int = Query(200, le=500)):
     ref_time = now()
     with store.lock:
         rows = [store.trip_view(t, ref_time) for t in sorted(store.trips.values(), key=lambda t: t["sched_dep"])]
-    if mode:
-        rows = [r for r in rows if r["mode"] == mode.upper()]
     if status:
         rows = [r for r in rows if r["status"] == status.upper()]
     if disrupted:
@@ -188,7 +181,7 @@ def list_assets():
         items = [store.asset_view(a) for a in store.assets.values()]
         teams = [{**t, "base": ref.display_code(t["base"])} for t in store.teams.values()]
     order = {"OUT_OF_SERVICE": 0, "DEGRADED": 1, "MAINTENANCE": 2, "OPERATIONAL": 3}
-    items.sort(key=lambda a: (order.get(a["status"], 9), a["category"] in ("Fleet", "Rolling stock"), a["health"]))
+    items.sort(key=lambda a: (order.get(a["status"], 9), a["category"] == "Fleet", a["health"]))
     return {"items": items, "teams": teams}
 
 

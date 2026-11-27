@@ -47,7 +47,7 @@ def trigger_scenario(scenario_id: str, schedule: Schedule | None = None) -> dict
         incident_id = store.next_id("INC", 1001)
         incident = {
             "id": incident_id, "title": event["title"], "scenario_id": scenario_id,
-            "category": event["category"], "mode": event["mode"], "severity": "PENDING", "status": "DETECTING",
+            "category": event["category"], "severity": "PENDING", "status": "DETECTING",
             "created_at": created, "updated_at": created, "resolved_at": None,
             "location": ref.display_code(event["location"]), "event": event,
             "detection": None, "impact": None, "infra": None, "options": [], "recommendation": None,

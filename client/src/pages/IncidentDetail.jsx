@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, ClipboardList, ListTree, Loader2, MapPin, Plane, TrainFront, Workflow } from 'lucide-react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { ArrowLeft, ClipboardList, ListTree, Loader2, MapPin, Plane, Workflow } from 'lucide-react'
 import DetectionPanel from '../components/incident/DetectionPanel'
 import ImpactPanel from '../components/incident/ImpactPanel'
 import InfraPanel from '../components/incident/InfraPanel'
@@ -8,7 +8,7 @@ import Lifecycle from '../components/incident/Lifecycle'
 import NotificationsPanel from '../components/incident/NotificationsPanel'
 import OptionsPanel from '../components/incident/OptionsPanel'
 import ExecutionLog from '../components/flow/ExecutionLog'
-import { Badge, Button, Card, CardHeader, IncidentStatus, PageLoader, SeverityBadge, Tabs } from '../components/ui'
+import { Badge, Card, CardHeader, IncidentStatus, PageLoader, SeverityBadge, Tabs } from '../components/ui'
 import { AGENT_META, IN_PROGRESS } from '../lib/agents'
 import { fmtDateTime, fmtNum, relTime } from '../lib/format'
 import { useApi } from '../lib/useApi'
@@ -19,7 +19,8 @@ export default function IncidentDetail() {
     refreshOn: ['incident.updated', 'agent.', 'work_order.', 'notifications.'],
     match: (e) => (e.data.id || e.data.incident_id) === id || e.type.startsWith('work_order'),
   })
-  const [tab, setTab] = useState(null)
+  const [params] = useSearchParams()
+  const [tab, setTab] = useState(params.get('tab'))
 
   if (error) return <p className="p-6 text-[13px] text-rose-600">{error}</p>
   if (!inc) return <PageLoader />
@@ -53,7 +54,7 @@ export default function IncidentDetail() {
               <Badge tone={inc.category === 'WEATHER' ? 'sky' : 'orange'}>{inc.category === 'WEATHER' ? 'Weather' : 'Asset health'}</Badge>
             </div>
             <h2 className="mt-1.5 flex items-start gap-2 text-[17px] font-semibold leading-snug tracking-tight text-slate-900 sm:items-center sm:text-[20px]">
-              {inc.mode === 'FLIGHT' ? <Plane size={20} className="mt-0.5 shrink-0 text-slate-400 sm:mt-0" /> : <TrainFront size={20} className="mt-0.5 shrink-0 text-slate-400 sm:mt-0" />}
+              <Plane size={20} className="mt-0.5 shrink-0 text-slate-400 sm:mt-0" />
               {inc.title}
             </h2>
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-slate-500">
@@ -65,8 +66,12 @@ export default function IncidentDetail() {
               )}
             </div>
           </div>
-          <Link to={`/orchestration/${inc.id}`}>
-            <Button variant="secondary" icon={Workflow}>View agent flow</Button>
+          <Link
+            to={`/incidents/${inc.id}/orchestration`}
+            className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 text-[13px] font-medium text-slate-700 shadow-sm transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
+          >
+            <Workflow size={15} /> Agent orchestration
+            {inc.trace?.length ? <span className="rounded-full bg-slate-100 px-1.5 text-[11px] font-semibold text-slate-600">{inc.trace.length}</span> : null}
           </Link>
         </div>
       </div>

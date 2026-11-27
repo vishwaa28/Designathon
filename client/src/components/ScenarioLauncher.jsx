@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CloudLightning, Droplets, Plane, Signal, TrainFront, Wind, Zap } from 'lucide-react'
+import { CloudLightning, Plane, Wind, Zap } from 'lucide-react'
 import { api } from '../lib/api'
 import { useApi } from '../lib/useApi'
 import { Badge, Button, Modal, Segmented, cx } from './ui'
@@ -8,9 +8,7 @@ import { Badge, Button, Modal, Segmented, cx } from './ui'
 const ICONS = {
   'wx-maa-thunderstorm': CloudLightning,
   'cyclone-maa': Wind,
-  'sig-mas-ajj': Signal,
   'aog-maa-hydraulic': Plane,
-  'flood-mas-gdr': Droplets,
 }
 
 export default function ScenarioLauncher({ open, onClose }) {
@@ -27,7 +25,7 @@ export default function ScenarioLauncher({ open, onClose }) {
     try {
       const inc = await api.post('/feeds/trigger', { scenario_id: selected })
       onClose()
-      navigate(destination === 'flow' ? `/orchestration/${inc.id}` : `/incidents/${inc.id}`)
+      navigate(destination === 'flow' ? `/incidents/${inc.id}/orchestration` : `/incidents/${inc.id}`)
     } catch (e) {
       setError(e.message)
     } finally {
@@ -52,7 +50,7 @@ export default function ScenarioLauncher({ open, onClose }) {
               onChange={setDestination}
               options={[
                 { value: 'incident', label: 'Incident workspace' },
-                { value: 'flow', label: 'Agent flow' },
+                { value: 'flow', label: 'Agent orchestration' },
               ]}
             />
           </div>
@@ -87,10 +85,6 @@ export default function ScenarioLauncher({ open, onClose }) {
                   <p className="text-[13.5px] font-semibold text-slate-900">{s.title}</p>
                   <Badge tone={s.category === 'WEATHER' ? 'sky' : 'orange'}>
                     {s.category === 'WEATHER' ? 'Weather' : 'Asset health'}
-                  </Badge>
-                  <Badge>
-                    {s.mode === 'FLIGHT' ? <Plane size={11} /> : <TrainFront size={11} />}
-                    {s.mode === 'FLIGHT' ? 'Air' : 'Rail'}
                   </Badge>
                 </div>
                 <p className="mt-1 text-[12.5px] leading-relaxed text-slate-600">{s.description}</p>

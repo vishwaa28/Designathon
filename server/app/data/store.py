@@ -6,6 +6,7 @@ requires re-implementing the public methods.
 """
 from __future__ import annotations
 
+import random
 import threading
 from collections import deque
 from datetime import datetime
@@ -55,6 +56,7 @@ class Store:
             self.work_orders: dict[str, dict] = {}
             self.notifications: list[dict] = []
             self.plan_artifacts: dict[str, dict] = {}
+            self.seat_assignments: dict[str, dict[str, str]] = {}
             self.feed: deque[dict] = deque(maxlen=150)
             self.weather: dict[str, dict] = {}
             self._counters: dict[str, int] = {}
@@ -95,12 +97,72 @@ class Store:
         t = self.trips[trip_id]
         return max(0, t["capacity"] - self.booked(trip_id))
 
+    # ---- Seats -----------------------------------------------------------
+    def seat_layout(self, trip_id: str) -> tuple[list[list[str]], str]:
+        """Cabin layout as rows of seat ids (3-3 for jets, 2-2 for turboprops) plus the letters used."""
+        t = self.trips[trip_id]
+        letters = "ABCD" if t["vehicle_type"].startswith("ATR") else "ABCDEF"
+        rows: list[list[str]] = []
+        n, row = 0, 1
+        while n < t["capacity"]:
+            seats = [f"{row}{letter}" for letter in letters[: t["capacity"] - n]]
+            rows.append(seats)
+            n += len(seats)
+            row += 1
+        return rows, letters
+
+    def seat_status(self, trip_id: str, pax_id: str | None = None) -> dict[str, str]:
+        """Seat id -> free | taken | mine. Occupancy is deterministic per trip; chosen seats are tracked explicitly."""
+        rows, _ = self.seat_layout(trip_id)
+        all_seats = [s for r in rows for s in r]
+        assigned = self.seat_assignments.get(trip_id, {})
+        others = [s for s in all_seats if s not in assigned]
+        random.Random(trip_id).shuffle(others)
+        taken = set(others[: max(0, self.booked(trip_id) - len(assigned))])
+        status = {}
+        for s in all_seats:
+            if s in assigned:
+                status[s] = "mine" if assigned[s] == pax_id else "taken"
+            else:
+                status[s] = "taken" if s in taken else "free"
+        return status
+
+    def seat_map(self, trip_id: str, pax_id: str | None = None) -> dict:
+        rows, letters = self.seat_layout(trip_id)
+        status = self.seat_status(trip_id, pax_id)
+        return {
+            "trip": self.trip_view(self.trips[trip_id]),
+            "letters": list(letters),
+            "aisle_after": len(letters) // 2,
+            "rows": [{"row": int(r[0][:-1]), "seats": [{"id": s, "status": status[s]} for s in r]} for r in rows],
+            "free": sum(1 for v in status.values() if v == "free"),
+        }
+
+    def assign_seat(self, trip_id: str, pax_id: str, seat: str | None = None) -> str | None:
+        """Give the passenger a seat on the trip (the requested one, or the first free window seat)."""
+        status = self.seat_status(trip_id, pax_id)
+        if seat is not None:
+            if status.get(seat) != "free":
+                return None
+        else:
+            free = [s for s, v in status.items() if v == "free"]
+            if not free:
+                return None
+            windows = [s for s in free if s[-1] in "AFD"]
+            seat = (windows or free)[0]
+        self.seat_assignments.setdefault(trip_id, {})[seat] = pax_id
+        return seat
+
+    def release_seat(self, trip_id: str, pax_id: str) -> None:
+        held = self.seat_assignments.get(trip_id, {})
+        for s in [s for s, pid in held.items() if pid == pax_id]:
+            del held[s]
+
     def trip_view(self, t: dict, ref_time: datetime | None = None) -> dict:
         return {
             "id": t["id"],
             "number": t["number"],
             "name": t["name"],
-            "mode": t["mode"],
             "operator": t["operator"],
             "origin": ref.display_code(t["origin"]),
             "destination": ref.display_code(t["destination"]),
@@ -142,8 +204,14 @@ class Store:
             "priority": is_priority(p),
         }
         if include_legs:
-            view["legs"] = [self.trip_view(self.trips[t]) for t in p["legs"]]
+            view["legs"] = [self.trip_view(self.trips[t]) | {"seat": self._seat_of(p, t)} for t in p["legs"]]
         return view
+
+    def _seat_of(self, p: dict, trip_id: str) -> str | None:
+        for s, pid in self.seat_assignments.get(trip_id, {}).items():
+            if pid == p["id"]:
+                return s
+        return None
 
     def crew_view(self, cid: str) -> dict:
         c = self.crew[cid]
@@ -157,7 +225,6 @@ class Store:
             "type": a["type"],
             "category": a["category"],
             "location": ref.display_code(a["location"]),
-            "corridor": [ref.display_code(c) for c in a["corridor"]] if a.get("corridor") else None,
             "criticality": a["criticality"],
             "health": a["health"],
             "status": a["status"],
