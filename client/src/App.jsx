@@ -4,6 +4,7 @@ import AppShell from './components/AppShell'
 import { PageLoader } from './components/ui'
 import { StreamProvider } from './lib/stream'
 
+const Landing = lazy(() => import('./pages/Landing'))
 const Overview = lazy(() => import('./pages/Overview'))
 const Incidents = lazy(() => import('./pages/Incidents'))
 const IncidentDetail = lazy(() => import('./pages/IncidentDetail'))
@@ -23,9 +24,10 @@ export default function App() {
     <StreamProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={page(Landing)} />
           <Route path="/traveler" element={page(TravelerPortal)} />
           <Route element={<AppShell />}>
-            <Route path="/" element={page(Overview)} />
+            <Route path="/overview" element={page(Overview)} />
             <Route path="/incidents" element={page(Incidents)} />
             <Route path="/incidents/:id" element={page(IncidentDetail)} />
             <Route path="/incidents/:id/orchestration" element={page(IncidentOrchestration)} />
@@ -33,6 +35,7 @@ export default function App() {
             <Route path="/schedule" element={page(Schedule)} />
             <Route path="/assets" element={page(Assets)} />
           </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </StreamProvider>

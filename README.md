@@ -81,7 +81,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. The traveler portal is at http://localhost:5173/traveler (links in notifications prefill the PNR and last name).
+Open http://localhost:5173 for the landing page; **Log in** goes straight to the control center at `/overview` (there are no credentials, it is a demo). The traveler portal is at http://localhost:5173/traveler (links in notifications prefill the PNR and last name).
 
 ### 4. Demo walkthrough
 
