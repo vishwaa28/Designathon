@@ -16,8 +16,8 @@ from app.services.weather import refresh_weather
 router = APIRouter()
 
 ACTIVE = {"DETECTING", "ANALYZING", "PLANNING", "AWAITING_APPROVAL", "PROCESSING", "REPLANNING", "EXECUTING"}
-HUB_NODES = ["DEL", "BOM", "BLR", "MAA", "HYD", "CCU", "R:NDLS", "R:CSMT"]
-CITY_AIRPORT = {"R:NDLS": "DEL", "R:CSMT": "BOM"}
+HUB_NODES = ["MAA", "R:MAS", "R:MS", "BLR", "HYD", "CJB", "COK", "R:SBC"]
+CITY_AIRPORT = {"R:MAS": "MAA", "R:MS": "MAA", "R:SBC": "BLR"}
 
 
 @router.get("/health")

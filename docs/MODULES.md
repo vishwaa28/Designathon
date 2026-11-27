@@ -75,7 +75,7 @@ Designathon/
 | Module | Responsibility |
 |---|---|
 | `orchestrator.py` | Creates incidents, runs graph invocations on a thread pool (one LangGraph thread per incident), resumes interrupted graphs with controller decisions and field updates, and waits until the graph is parked at the approval gate before reporting status. |
-| `feeds.py` | Scenario catalogue (Delhi thunderstorm, Agra signal failure, Mumbai aircraft hydraulic fault, Mumbai–Pune track flooding), event builder that degrades the related asset, and the background telemetry loop publishing asset-health, operations and weather ticks. |
+| `feeds.py` | Scenario catalogue centred on the Chennai hub (MAA thunderstorm, cyclone landfall near Chennai, MAA aircraft hydraulic fault, Chennai Central–Arakkonam signal failure, Chennai–Gudur track flooding), event builder that degrades the related asset, and the background telemetry loop publishing asset-health, operations and weather ticks. |
 | `voice.py` | Traveler voice bridge to Azure Speech Voice Live (`azure-ai-voicelive`, API-key credential). Builds per-booking instructions (itinerary, delays, disruption) in the chosen language, configures neural voices (`en-IN-NeerjaNeural`, `ta-IN-PallaviNeural`, `te-IN-ShrutiNeural`), speech recognition (`azure-speech`, per-language locale), server VAD with echo cancellation and noise suppression, and four function tools (`get_booking_status`, `get_alternatives`, `rebook`, `request_refund`) that call the same logic as the portal. Relays audio and transcripts to the browser and handles barge-in. |
 | `weather.py` | Pulls current conditions for six hubs from Open-Meteo; uses a simulated feed when the API is unreachable and never overwrites a scenario-injected severe weather state. |
 

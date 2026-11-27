@@ -15,9 +15,9 @@ function WorkOrderCard({ wo, onAdvance }) {
   const next = WO_FLOW[idx + 1]
   return (
     <Card>
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-5 py-3.5">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-3.5 sm:px-5">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-[12.5px] font-semibold text-slate-700">{wo.id}</span>
             <Badge tone={wo.priority === 'P1' ? 'rose' : 'amber'}>{wo.priority}</Badge>
             <span className="text-[11.5px] text-slate-400">rev {wo.revision}</span>
@@ -34,7 +34,7 @@ function WorkOrderCard({ wo, onAdvance }) {
           <Badge tone="emerald" dot>Completed {fmtTime(wo.completed_at)}</Badge>
         )}
       </div>
-      <div className="grid gap-5 p-5 lg:grid-cols-[1fr_260px]">
+      <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1fr_260px]">
         <div>
           <p className="text-[12.5px] leading-relaxed text-slate-600">{wo.description}</p>
           <RepairTimeline window={wo.repair_window} dispatchAt={wo.created_at} onSiteAt={wo.on_site_at} />
@@ -71,7 +71,7 @@ export default function Assets() {
   const down = assets.items.filter((a) => a.status !== 'OPERATIONAL').length
 
   return (
-    <div className="space-y-5 p-6">
+    <div className="space-y-4 p-4 sm:space-y-5 sm:p-6">
       <div className="grid gap-5 xl:grid-cols-3">
         <div className="space-y-4 xl:col-span-2">
           <div className="flex items-center justify-between">

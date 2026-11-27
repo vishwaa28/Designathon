@@ -302,7 +302,7 @@ export default function OptionsPanel({ inc }) {
   return (
     <div className="space-y-5">
       {rec && (
-        <Card className="p-5">
+        <Card className="p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-3xl">
               <p className="flex items-center gap-2 text-[12px] font-medium text-slate-500">
@@ -311,7 +311,7 @@ export default function OptionsPanel({ inc }) {
               </p>
               <p className="mt-2 text-[13.5px] leading-relaxed text-slate-700">{rec.rationale}</p>
             </div>
-            <div className="min-w-[420px] flex-1 xl:max-w-[520px]">
+            <div className="w-full min-w-0 overflow-x-auto lg:w-auto lg:min-w-[420px] lg:flex-1 xl:max-w-[520px]">
               <CriteriaTable options={options} recommendation={rec} />
             </div>
           </div>
@@ -332,8 +332,8 @@ export default function OptionsPanel({ inc }) {
       </div>
 
       {awaiting && (
-        <Card className="sticky bottom-4 z-10 border-amber-200 shadow-lg">
-          <div className="flex flex-wrap items-end gap-4 p-4">
+        <Card className="z-10 border-amber-200 shadow-lg sm:sticky sm:bottom-4">
+          <div className="flex flex-wrap items-end gap-3 p-4 sm:gap-4">
             <div className="flex items-center gap-3">
               <span className="animate-pulse-amber flex h-9 w-9 items-center justify-center rounded-full bg-amber-500 text-white">
                 <ShieldCheck size={17} />
@@ -346,12 +346,12 @@ export default function OptionsPanel({ inc }) {
                 </p>
               </div>
             </div>
-            <div className="w-56">
+            <div className="w-full sm:w-56">
               <Field label="Controller">
                 <input className={inputClass} value={controller} onChange={(e) => setController(e.target.value)} />
               </Field>
             </div>
-            <div className="min-w-[200px] flex-1">
+            <div className="w-full min-w-[200px] flex-1 sm:w-auto">
               <Field label={isOverride ? 'Override reason (required)' : 'Notes'}>
                 <input
                   className={inputClass}
@@ -361,7 +361,7 @@ export default function OptionsPanel({ inc }) {
                 />
               </Field>
             </div>
-            <div className="flex gap-2">
+            <div className="flex w-full flex-wrap gap-2 sm:w-auto">
               <Button variant="danger" icon={ThumbsDown} loading={busy === 'reject'}
                 onClick={() => window.confirm('Reject all options and hand over to manual handling?') &&
                   send('reject', { action: 'reject', controller, notes })}>
@@ -369,6 +369,7 @@ export default function OptionsPanel({ inc }) {
               </Button>
               <Button variant="secondary" icon={RefreshCw} onClick={() => setReplan(true)}>Re-plan</Button>
               <Button
+                className="flex-1 sm:flex-none"
                 icon={ShieldCheck}
                 loading={busy === 'approve'}
                 disabled={isOverride && !overrideReason.trim()}

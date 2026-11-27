@@ -14,6 +14,7 @@ import {
   Wrench,
   Zap,
 } from 'lucide-react'
+import DeliveryCard from '../components/DeliveryCard'
 import LiveFeed from '../components/LiveFeed'
 import ScenarioLauncher from '../components/ScenarioLauncher'
 import {
@@ -89,7 +90,7 @@ export default function Overview() {
   const k = data.kpis
 
   return (
-    <div className="space-y-5 p-6">
+    <div className="space-y-4 p-4 sm:space-y-5 sm:p-6">
       {k.awaiting_approval > 0 && (
         <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
           <ShieldCheck size={18} className="text-amber-600" />
@@ -101,7 +102,7 @@ export default function Overview() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
         <Kpi label="Services today" value={k.trips_total} sub={`${k.flights} flights · ${k.trains} trains`} icon={CalendarClock} />
         <Kpi
           label="On-time performance"
@@ -126,7 +127,7 @@ export default function Overview() {
       <div className="grid gap-5 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader title="Network status" subtitle="Hub movements in the next 3 hours with current weather" icon={Plane} />
-          <div className="grid grid-cols-2 gap-3 p-4 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5 p-3 sm:gap-3 sm:p-4 md:grid-cols-4">
             {data.hubs.map((h) => (
               <HubCard key={h.code} hub={h} />
             ))}
@@ -135,10 +136,12 @@ export default function Overview() {
         <LiveFeed className="h-[420px]" />
       </div>
 
+      <DeliveryCard />
+
       <div className="grid gap-5 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader title="Departures by hour" subtitle="Scheduled services with delays and cancellations" icon={CalendarClock} />
-          <div className="h-[280px] px-3 pb-3 pt-4">
+          <div className="h-[240px] px-1 pb-3 pt-4 sm:h-[280px] sm:px-3">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.hourly} barGap={2}>
                 <CartesianGrid vertical={false} stroke="#eef2f7" />

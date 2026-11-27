@@ -15,34 +15,43 @@ log = logging.getLogger("arro.feeds")
 
 SCENARIOS = [
     {
-        "id": "wx-del-thunderstorm", "kind": "WEATHER_AIRPORT", "category": "WEATHER", "mode": "FLIGHT",
-        "title": "Severe thunderstorm over Delhi airport", "location": "DEL", "asset_id": "DEL-RWY-1028",
+        "id": "wx-maa-thunderstorm", "kind": "WEATHER_AIRPORT", "category": "WEATHER", "mode": "FLIGHT",
+        "title": "Severe thunderstorm over Chennai airport", "location": "MAA", "asset_id": "MAA-RWY-0725",
         "source": "Weather feed (Open-Meteo observation + nowcast)",
-        "description": "Convective cell with gusts above 80 km/h and lightning inside 5 km. Runway 10/28 closed and ramp operations suspended.",
+        "description": "Northeast-monsoon convective cell with gusts above 80 km/h and lightning inside 5 km. Runway 07/25 closed and ramp operations suspended.",
     },
     {
-        "id": "sig-ndls-agc", "kind": "SIGNAL_FAILURE", "category": "ASSET_HEALTH", "mode": "TRAIN",
-        "title": "Signal failure on the New Delhi - Agra corridor", "location": "R:NDLS", "asset_id": "NR-SIG-BS114",
-        "corridor": ["R:NDLS", "R:AGC"], "source": "Asset-health stream (interlocking telemetry)",
-        "description": "Block signal BS-114 relay voltage collapsed and the track circuit shows false occupancy. Signal stuck at danger.",
+        "id": "cyclone-maa", "kind": "WEATHER_AIRPORT", "category": "WEATHER", "mode": "FLIGHT",
+        "title": "Cyclonic storm closes Chennai airport", "location": "MAA", "asset_id": "MAA-RWY-1230",
+        "source": "IMD cyclone bulletin + Open-Meteo nowcast",
+        "description": "Cyclonic storm crossing the coast near Chennai: sustained winds above 70 km/h, torrential rain and water-logging on Runway 12/30. All movements suspended.",
+        "readings": {"wind_gust_kmh": 108, "wind_kmh": 74, "visibility_m": 450, "lightning_km": 6.0, "precip_mm_h": 52},
+        "forecast_min": 240, "condition": "Cyclonic storm",
     },
     {
-        "id": "aog-bom-hydraulic", "kind": "AIRCRAFT_FAULT", "category": "ASSET_HEALTH", "mode": "FLIGHT",
-        "title": "Hydraulic fault grounds an aircraft at Mumbai", "location": "BOM", "asset_id": None,
+        "id": "aog-maa-hydraulic", "kind": "AIRCRAFT_FAULT", "category": "ASSET_HEALTH", "mode": "FLIGHT",
+        "title": "Hydraulic fault grounds an aircraft at Chennai", "location": "MAA", "asset_id": None,
         "source": "Asset-health stream (aircraft condition monitoring)",
-        "description": "Hydraulic system B pressure loss reported before departure. Aircraft not dispatchable under the MEL.",
+        "description": "Hydraulic system B pressure loss reported before departure from Chennai. Aircraft not dispatchable under the MEL.",
     },
     {
-        "id": "flood-csmt-pune", "kind": "TRACK_FLOOD", "category": "WEATHER", "mode": "TRAIN",
-        "title": "Flooding and track-circuit failure on the Mumbai - Pune ghat", "location": "R:CSMT", "asset_id": "NR-TC-48",
-        "corridor": ["R:CSMT", "R:PUNE"], "source": "Weather feed + track-circuit telemetry",
-        "description": "Extremely heavy rainfall with water above rail level in the ghat section; track circuit TC-48 failed.",
+        "id": "sig-mas-ajj", "kind": "SIGNAL_FAILURE", "category": "ASSET_HEALTH", "mode": "TRAIN",
+        "title": "Signal failure on the Chennai Central - Arakkonam section", "location": "R:MAS", "asset_id": "NR-SIG-AJJ14",
+        "corridor": ["R:MAS", "R:AJJ"], "source": "Asset-health stream (interlocking telemetry)",
+        "description": "Block signal AJJ-14 near Tiruvallur: relay voltage collapsed and the track circuit shows false occupancy. Signal stuck at danger.",
+    },
+    {
+        "id": "flood-mas-gdr", "kind": "TRACK_FLOOD", "category": "WEATHER", "mode": "TRAIN",
+        "title": "Flooding on the Chennai Central - Gudur line", "location": "R:MAS", "asset_id": "NR-TC-31",
+        "corridor": ["R:MAS", "R:GDR"], "source": "Weather feed + track-circuit telemetry",
+        "description": "Extremely heavy rainfall with water above rail level between Ennore and Ponneri; track circuit TC-31 failed.",
     },
 ]
 
 
 def scenario_list() -> list[dict]:
-    return [{k: (ref.display_code(v) if k == "location" else v) for k, v in s.items() if k != "corridor"}
+    hidden = {"corridor", "readings", "forecast_min", "condition"}
+    return [{k: (ref.display_code(v) if k == "location" else v) for k, v in s.items() if k not in hidden}
             | {"corridor": [ref.display_code(c) for c in s.get("corridor", [])]} for s in SCENARIOS]
 
 
@@ -86,15 +95,19 @@ def build_event(scenario_id: str) -> dict:
             event["baseline"] = {"wind_gust_kmh": live.get("gust_kmh"), "visibility_m": live.get("visibility_m"),
                                  "precip_mm_h": live.get("precip_mm"), "temperature_c": live.get("temperature_c"),
                                  "observed_by": live.get("source", "Simulated")}
-            event["readings"] = {"wind_gust_kmh": 86, "wind_kmh": 52, "visibility_m": 700, "lightning_km": 3.4,
-                                 "precip_mm_h": 31, "temperature_c": round((live.get("temperature_c") or 29) - 7, 1)}
-            event["forecast"] = {"duration_min": 150, "source": "Nowcast cell tracking"}
+            r = {"wind_gust_kmh": 86, "wind_kmh": 52, "visibility_m": 700, "lightning_km": 3.4, "precip_mm_h": 31,
+                 **spec.get("readings", {})}
+            r["temperature_c"] = round((live.get("temperature_c") or 29) - 7, 1)
+            event["readings"] = r
+            event["forecast"] = {"duration_min": spec.get("forecast_min", 150), "source": "Nowcast cell tracking"}
             store.weather[spec["location"]] = {
-                **live, "gust_kmh": 86, "wind_kmh": 52, "visibility_m": 700, "precip_mm": 31,
-                "condition": "Severe thunderstorm", "weather_code": 99, "severe": True,
+                **live, "gust_kmh": r["wind_gust_kmh"], "wind_kmh": r["wind_kmh"], "visibility_m": r["visibility_m"],
+                "precip_mm": r["precip_mm_h"], "condition": spec.get("condition", "Severe thunderstorm"),
+                "weather_code": 99, "severe": True,
                 "source": f"{live.get('source', 'Simulated')} + nowcast", "observed_at": iso(received),
             }
-            asset_update = {"standing_water_mm": 6.5, "crosswind_kt": 31.0, "friction_coefficient": 0.38}
+            asset_update = {"standing_water_mm": round(r["precip_mm_h"] / 5, 1), "crosswind_kt": round(r["wind_gust_kmh"] / 2.8, 1),
+                            "friction_coefficient": 0.38}
         elif spec["kind"] == "SIGNAL_FAILURE":
             event["readings"] = {"relay_voltage_v": 16.8, "response_ms": 2400, "track_circuit_ohm": 0.3}
             asset_update = {"relay_voltage_v": 16.8, "response_ms": 2400.0, "track_circuit_ohm": 0.3}

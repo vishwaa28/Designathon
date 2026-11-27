@@ -186,7 +186,7 @@ export default function VoiceAgent({ booking, onBookingChanged }) {
     <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_-12px_rgba(16,24,40,0.12)]">
       <div className="grid lg:grid-cols-[380px_1fr]">
         {/* Voice stage */}
-        <div className="relative flex flex-col items-center overflow-hidden bg-gradient-to-b from-navy-900 via-navy-800 to-brand-900 px-6 pb-7 pt-6 text-white">
+        <div className="relative flex flex-col items-center overflow-hidden bg-gradient-to-b from-navy-900 via-navy-800 to-brand-900 px-4 pb-6 pt-5 text-white sm:px-6 sm:pb-7 sm:pt-6">
           <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-brand-500/20 blur-3xl" />
           <div className="relative flex w-full items-center justify-between">
             <div>
@@ -270,9 +270,9 @@ export default function VoiceAgent({ booking, onBookingChanged }) {
         </div>
 
         {/* Conversation */}
-        <div className="flex min-h-[420px] flex-col">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
-            <div>
+        <div className="flex min-h-[360px] flex-col sm:min-h-[420px]">
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3.5 sm:px-5">
+            <div className="min-w-0">
               <p className="text-[13.5px] font-semibold text-slate-900">Conversation</p>
               <p className="text-[12px] text-slate-500">
                 {passenger ? `${passenger.name} · ${passenger.pnr}` : 'Your conversation will appear here'}
@@ -281,7 +281,7 @@ export default function VoiceAgent({ booking, onBookingChanged }) {
             <span className="rounded-md bg-slate-100 px-2 py-1 text-[11.5px] font-medium text-slate-600">{LANGUAGES.find((l) => l.id === language).label}</span>
           </div>
 
-          <div ref={scroller} className="flex-1 space-y-3 overflow-y-auto px-5 py-4" style={{ maxHeight: 360 }}>
+          <div ref={scroller} className="flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-5" style={{ maxHeight: 360 }}>
             {!voice.messages.length && (
               <div className="flex h-full min-h-[240px] flex-col items-center justify-center text-center">
                 <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
@@ -296,7 +296,7 @@ export default function VoiceAgent({ booking, onBookingChanged }) {
             {voice.messages.map((m) => (m.kind === 'tool' ? <ToolLine key={m.key} m={m} /> : <Bubble key={m.key} m={m} />))}
           </div>
 
-          <div className="border-t border-slate-100 px-5 py-3">
+          <div className="border-t border-slate-100 px-4 py-3 sm:px-5">
             <div className="mb-2.5 flex flex-wrap gap-1.5">
               {SUGGESTIONS[language].map((s) => (
                 <button

@@ -45,7 +45,20 @@ AZURE_VOICELIVE_ENDPOINT=https://<resource>.services.ai.azure.com/
 AZURE_VOICELIVE_API_VERSION=2025-10-01
 AZURE_VOICELIVE_MODEL=gpt-4.1          # gpt-realtime is not available in every region
 # AZURE_VOICELIVE_API_KEY=<key>        # optional; defaults to the Azure Foundry key
+
+# Real e-mail / SMS to the four contact travelers (optional; otherwise recorded as not configured)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=<gmail address>
+SMTP_PASSWORD=<16-character Gmail app password>
+SMS_PROVIDER=twilio                    # or fast2sms
+TWILIO_ACCOUNT_SID=<sid>
+TWILIO_AUTH_TOKEN=<token>
+TWILIO_FROM=<twilio number>
+# FAST2SMS_API_KEY=<key>
 ```
+
+The network is centred on Chennai (MAA airport, Chennai Central and Egmore stations). Four real contact travelers (Vishwaa Yuvaraj, Lathifunisa Tausifa, Amal Sivan, Sushmitha Saravanan) are moved onto the affected services of every disruption, so they receive the actual e-mail and SMS when the controller approves a plan. **Overview → Real e-mail & SMS delivery** shows the provider status and has a test-send button.
 
 At least one provider is needed for model-written narratives; without any, every agent falls back to deterministic output and the workflow still completes.
 
@@ -72,7 +85,7 @@ Open http://localhost:5173. The traveler portal is at http://localhost:5173/trav
 
 ### 4. Demo walkthrough
 
-1. Click **Inject event** and choose a scenario (for example *Severe thunderstorm over Delhi airport*).
+1. Click **Inject event** and choose a scenario (for example *Severe thunderstorm over Chennai airport*).
 2. Watch the agents run on **Agent orchestration**.
 3. Open the incident, review impact, the work order and the three recovery options.
 4. Optionally push a field update or re-plan with a different priority, then approve.

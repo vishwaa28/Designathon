@@ -1,20 +1,21 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CloudLightning, Droplets, Plane, Signal, TrainFront, Zap } from 'lucide-react'
+import { CloudLightning, Droplets, Plane, Signal, TrainFront, Wind, Zap } from 'lucide-react'
 import { api } from '../lib/api'
 import { useApi } from '../lib/useApi'
 import { Badge, Button, Modal, Segmented, cx } from './ui'
 
 const ICONS = {
-  'wx-del-thunderstorm': CloudLightning,
-  'sig-ndls-agc': Signal,
-  'aog-bom-hydraulic': Plane,
-  'flood-csmt-pune': Droplets,
+  'wx-maa-thunderstorm': CloudLightning,
+  'cyclone-maa': Wind,
+  'sig-mas-ajj': Signal,
+  'aog-maa-hydraulic': Plane,
+  'flood-mas-gdr': Droplets,
 }
 
 export default function ScenarioLauncher({ open, onClose }) {
   const { data } = useApi(open ? '/feeds/scenarios' : null)
-  const [selected, setSelected] = useState('wx-del-thunderstorm')
+  const [selected, setSelected] = useState('wx-maa-thunderstorm')
   const [destination, setDestination] = useState('incident')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -43,7 +44,7 @@ export default function ScenarioLauncher({ open, onClose }) {
       subtitle="Push a simulated weather or asset-health event into the live feed. The detection agent picks it up immediately."
       footer={
         <>
-          <div className="mr-auto flex items-center gap-2 text-[12.5px] text-slate-500">
+          <div className="mr-auto flex w-full items-center gap-2 text-[12.5px] text-slate-500 sm:w-auto">
             Open
             <Segmented
               size="sm"

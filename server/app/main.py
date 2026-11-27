@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import incidents, operations, stream, traveler, voice
+from app.api import delivery, incidents, operations, stream, traveler, voice
 from app.config import settings
 from app.services.feeds import telemetry_loop
 from app.services.weather import refresh_weather
@@ -42,5 +42,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for module in (operations, incidents, traveler, stream, voice):
+for module in (operations, incidents, traveler, stream, voice, delivery):
     app.include_router(module.router, prefix="/api")

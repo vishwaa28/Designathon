@@ -1,4 +1,5 @@
 /* Microphone capture worklet: resamples to 24 kHz mono PCM16 in 40 ms frames and reports input level. */
+/* global AudioWorkletProcessor, sampleRate, registerProcessor */
 class PcmCapture extends AudioWorkletProcessor {
   constructor() {
     super()

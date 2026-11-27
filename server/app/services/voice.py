@@ -38,6 +38,7 @@ from app.api import traveler
 from app.config import settings
 from app.core.events import bus
 from app.core.utils import parse_dt
+from app.services import delivery
 from app.data import reference as ref
 from app.data.store import store
 
@@ -137,9 +138,9 @@ def build_instructions(p: dict, lang: str) -> str:
     needs = ", ".join(snap["actionable_leg_ids"]) or "none"
     special = {"WCHR": "wheelchair assistance", "UMNR": "unaccompanied minor", "MEDA": "medical assistance",
                "SRCT": "senior citizen"}.get(v["ssr"], "")
-    return f"""You are the voice assistant of Meridian Airways and Northstar Rail, helping one traveler manage a disrupted journey by phone-style conversation.
+    return f"""You are the voice assistant of Meridian Airways and Southern Rail, helping one traveler manage a disrupted journey by phone-style conversation.
 
-LANGUAGE: Speak and understand {cfg['label']} ({cfg['locale']}). Always answer in {cfg['label']}, using natural, polite, everyday wording. Keep flight numbers, train numbers, airport codes and times in their standard form (for example "MR 107", "DEL", "18:30"). Speak numbers clearly.
+LANGUAGE: Speak and understand {cfg['label']} ({cfg['locale']}). Always answer in {cfg['label']}, using natural, polite, everyday wording. Keep flight numbers, train numbers, airport codes and times in their standard form (for example "MR 107", "MAA", "18:30"). Speak numbers clearly.
 
 STYLE: This is spoken audio. Use one to three short sentences per turn, no lists, no markdown, no emojis. Warm, calm and reassuring: travelers are worried. Ask one question at a time.
 
@@ -169,11 +170,16 @@ def _greeting_instruction(p: dict, lang: str) -> str:
     focus = ("Briefly say that you can see their journey has been affected and ask how you can help, for example by explaining "
              "the change or finding another option." if needs else
              "Say you can help with their trip status or changes, and ask how you can help.")
-    return (f"Greet {p['first_name']} warmly in {cfg['label']} as the Meridian and Northstar assistant. {focus} "
+    return (f"Greet {p['first_name']} warmly in {cfg['label']} as the Meridian and Southern Rail assistant. {focus} "
             f"Keep it to two short sentences.")
 
 
 # ---- tool execution ----------------------------------------------------------
+
+def _confirm(record: dict, p: dict) -> None:
+    if p.get("contact"):
+        delivery.dispatch(record, p)
+
 
 def _run_tool(p: dict, name: str, args: dict) -> tuple[dict, str | None]:
     """Execute a tool against the store. Returns (result, event_to_publish)."""
@@ -194,9 +200,11 @@ def _run_tool(p: dict, name: str, args: dict) -> tuple[dict, str | None]:
                      "different_mode": t["alt_mode"]} for t in res["items"][:5]]}, None
             if name == "rebook":
                 record = traveler.apply_rebook(p, args.get("leg_id", ""), args.get("new_trip_id", ""))
+                _confirm(record, p)
                 return {"ok": True, "confirmation": record["message"]}, "traveler.rebooked"
             if name == "request_refund":
                 record = traveler.apply_refund(p, args.get("leg_id", ""))
+                _confirm(record, p)
                 return {"ok": True, "confirmation": record["message"]}, "traveler.refunded"
     except HTTPException as exc:
         return {"ok": False, "error": exc.detail}, None
