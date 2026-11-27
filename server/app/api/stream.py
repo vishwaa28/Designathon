@@ -11,6 +11,10 @@ from app.core.events import bus
 
 router = APIRouter()
 
+# Close before the serverless function limit (300 s on Vercel) so the browser reconnects
+# cleanly with Last-Event-ID instead of the platform killing the request.
+MAX_STREAM_SECONDS = 240
+
 
 @router.get("/stream")
 async def stream(request: Request):
@@ -19,9 +23,10 @@ async def stream(request: Request):
 
     async def generator():
         nonlocal last_id
-        yield "retry: 3000\n\n"
+        yield "retry: 1000\n\n"
         idle = 0.0
-        while True:
+        deadline = asyncio.get_running_loop().time() + MAX_STREAM_SECONDS
+        while asyncio.get_running_loop().time() < deadline:
             if await request.is_disconnected():
                 break
             events = bus.since(last_id)

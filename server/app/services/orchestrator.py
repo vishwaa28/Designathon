@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 
 from langgraph.types import Command
@@ -17,6 +18,10 @@ from app.services import feeds
 
 log = logging.getLogger("arro.orchestrator")
 executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="graph")
+
+# Serverless hosts (Vercel) only keep the instance alive for tracked work, so the API passes
+# FastAPI's BackgroundTasks.add_task; scripts and tests fall back to the thread pool.
+Schedule = Callable[..., object]
 
 
 class WorkflowError(Exception):
@@ -35,7 +40,7 @@ def _invoke(incident_id: str, payload) -> None:
         update_incident(incident_id, status="FAILED", error=f"{type(exc).__name__}: {exc}")
 
 
-def trigger_scenario(scenario_id: str) -> dict:
+def trigger_scenario(scenario_id: str, schedule: Schedule | None = None) -> dict:
     event = feeds.build_event(scenario_id)
     created = iso(now())
     with store.lock:
@@ -56,7 +61,7 @@ def trigger_scenario(scenario_id: str) -> dict:
     bus.publish("incident.created", {"id": incident_id, "title": event["title"]})
     initial = {"incident_id": incident_id, "event": event, "plan_version": 1,
                "preferences": {"priority": "balanced"}, "adjustments": {}, "history": []}
-    executor.submit(_invoke, incident_id, initial)
+    (schedule or executor.submit)(_invoke, incident_id, initial)
     return incident
 
 
@@ -70,7 +75,7 @@ def _wait_for_interrupt(incident_id: str, timeout_s: float = 5.0) -> None:
     raise WorkflowError("Workflow is not waiting for a decision")
 
 
-def _resume(incident_id: str, decision: dict) -> None:
+def _resume(incident_id: str, decision: dict, schedule: Schedule | None = None) -> None:
     with store.lock:
         inc = store.incidents.get(incident_id)
         if inc is None:
@@ -84,18 +89,18 @@ def _resume(incident_id: str, decision: dict) -> None:
         update_incident(incident_id, status="AWAITING_APPROVAL")
         raise
     bus.publish("incident.updated", {"id": incident_id, "status": "PROCESSING", "fields": ["status"]})
-    executor.submit(_invoke, incident_id, Command(resume=decision))
+    (schedule or executor.submit)(_invoke, incident_id, Command(resume=decision))
 
 
-def submit_decision(incident_id: str, decision: dict) -> None:
+def submit_decision(incident_id: str, decision: dict, schedule: Schedule | None = None) -> None:
     inc = store.incidents.get(incident_id)
     if inc is None:
         raise KeyError(incident_id)
     if decision["action"] == "approve":
         if not any(o["id"] == decision.get("option_id") for o in inc["options"]):
             raise WorkflowError("Unknown option for the current plan version")
-    _resume(incident_id, decision)
+    _resume(incident_id, decision, schedule)
 
 
-def push_update(incident_id: str, update_type: str, controller: str) -> None:
-    _resume(incident_id, {"action": "update", "update_type": update_type, "controller": controller})
+def push_update(incident_id: str, update_type: str, controller: str, schedule: Schedule | None = None) -> None:
+    _resume(incident_id, {"action": "update", "update_type": update_type, "controller": controller}, schedule)
