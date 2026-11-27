@@ -1,0 +1,22 @@
+server/venv
+client/node_modules
+
+# Python
+server/venv/
+server/__pycache__/
+*.pyc
+
+# Node
+client/node_modules/
+
+# Environment variables
+.env
+server/.env
+client/.env
+
+# Build artifacts
+client/dist/
+
+# OS files
+.DS_Store
+Thumbs.db
