@@ -149,16 +149,18 @@ export default function Overview() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
-        <Card className="min-w-0 xl:col-span-2">
+      <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-3">
+        <Card className="min-w-0 lg:col-span-2">
           <CardHeader title="Network status" subtitle="Hub movements in the next 3 hours with current weather" icon={Plane} />
-          <div className="grid grid-cols-2 gap-2.5 p-3 sm:gap-3 sm:p-4 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5 p-3 sm:gap-3 sm:p-4 xl:grid-cols-4">
             {data.hubs.map((h) => (
               <HubCard key={h.code} hub={h} />
             ))}
           </div>
         </Card>
-        <LiveFeed className="h-[420px]" />
+        <div className="relative" style={{ minHeight: 420 }}>
+          <LiveFeed className="absolute inset-0" />
+        </div>
       </div>
 
       <LiveFlights />
