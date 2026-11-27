@@ -39,7 +39,7 @@ export default function IncidentDetail() {
   ]
 
   return (
-    <div className="space-y-5 p-6">
+    <div className="space-y-4 p-4 sm:space-y-5 sm:p-6">
       <div>
         <Link to="/incidents" className="inline-flex items-center gap-1 text-[12.5px] font-medium text-slate-500 hover:text-slate-800">
           <ArrowLeft size={14} /> Incidents
@@ -52,8 +52,8 @@ export default function IncidentDetail() {
               <IncidentStatus status={inc.status} />
               <Badge tone={inc.category === 'WEATHER' ? 'sky' : 'orange'}>{inc.category === 'WEATHER' ? 'Weather' : 'Asset health'}</Badge>
             </div>
-            <h2 className="mt-1.5 flex items-center gap-2 text-[20px] font-semibold tracking-tight text-slate-900">
-              {inc.mode === 'FLIGHT' ? <Plane size={20} className="text-slate-400" /> : <TrainFront size={20} className="text-slate-400" />}
+            <h2 className="mt-1.5 flex items-start gap-2 text-[17px] font-semibold leading-snug tracking-tight text-slate-900 sm:items-center sm:text-[20px]">
+              {inc.mode === 'FLIGHT' ? <Plane size={20} className="mt-0.5 shrink-0 text-slate-400 sm:mt-0" /> : <TrainFront size={20} className="mt-0.5 shrink-0 text-slate-400 sm:mt-0" />}
               {inc.title}
             </h2>
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-slate-500">
@@ -71,7 +71,7 @@ export default function IncidentDetail() {
         </div>
       </div>
 
-      <Card className="px-6 py-4">
+      <Card className="px-4 py-4 sm:px-6">
         <Lifecycle inc={inc} />
         {busy && (
           <div className="mt-4 flex items-center gap-2.5 rounded-lg bg-brand-50 px-3.5 py-2 text-[12.5px] text-brand-800">

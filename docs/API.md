@@ -29,7 +29,7 @@ Base URL: `http://localhost:8000/api` (proxied as `/api` by the Vite dev server)
 |---|---|---|
 | GET | `/feeds/scenarios` | Injectable scenarios and field-update types |
 | GET | `/feeds/live` | Recent feed events (`limit` ≤ 150) |
-| POST | `/feeds/trigger` | Body `{"scenario_id": "wx-del-thunderstorm"}` → `201 {incident_id, …}`. Starts the agent graph |
+| POST | `/feeds/trigger` | Body `{"scenario_id": "wx-maa-thunderstorm"}` → `201 {incident_id, …}`. Starts the agent graph |
 | GET | `/incidents` | Incident summaries |
 | GET | `/incidents/{id}` | Full incident: event, detection, impact, infra, options, recommendation, decision, notifications summary, trace, plan history, work order |
 | POST | `/incidents/{id}/decision` | Controller decision (see below). `202`, `409` if not awaiting approval |
@@ -53,6 +53,16 @@ Base URL: `http://localhost:8000/api` (proxied as `/api` by the Vite dev server)
 - `approve` – `option_id` required; `override_reason` required by the UI when the option is not the recommendation.
 - `reject` – closes the incident without executing.
 - `replan` – `preferences: {"priority": "balanced" | "passenger" | "cost" | "speed", "max_delay_min": 15–1440, "avoid_cancellations": bool}`.
+
+## E-mail and SMS delivery
+
+Only the four contact travelers (`contact: true`) receive real messages; every other notification is a simulated record. Each delivered notification carries `deliveries: [{channel, to, status, provider, error}]` and `status` `SENT` / `PARTIAL` / `FAILED` / `NOT_CONFIGURED`.
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/delivery/status` | `{email: {configured, provider, host, sender}, sms: {configured, provider}, contacts: [...]}` with masked e-mail and phone, current trip and last notification |
+| POST | `/delivery/test` | Body `{"pnr": "VSHWA1" \| null, "channels": ["EMAIL", "SMS"]}`. `pnr` null sends to all four contacts |
+| POST | `/notifications/{id}/resend` | Re-send one contact notification by e-mail and SMS |
 
 ## Voice assistant
 

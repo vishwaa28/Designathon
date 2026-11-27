@@ -46,3 +46,8 @@ class RebookRequest(BaseModel):
 class RefundRequest(BaseModel):
     last_name: str
     leg_trip_id: str
+
+
+class DeliveryTestRequest(BaseModel):
+    pnr: str | None = None
+    channels: list[Literal["EMAIL", "SMS"]] = ["EMAIL", "SMS"]

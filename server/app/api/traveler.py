@@ -1,13 +1,15 @@
 """Traveler self-service: booking lookup, alternatives, rebooking and refunds."""
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from app.api.schemas import RebookRequest, RefundRequest
 from app.core.events import bus
 from app.core.utils import add_min, iso, now
 from app.data import reference as ref
 from app.data.store import store
+from app.domain import notifications as nt
+from app.services import delivery
 
 router = APIRouter(prefix="/traveler")
 
@@ -40,7 +42,9 @@ def _notify(p: dict, subject: str, message: str, outcome: str, trip: str | None,
         "name": f"{p['first_name']} {p['last_name']}", "last_name": p["last_name"], "language": "en",
         "language_label": "English", "channel": p["channel"], "outcome": outcome, "subject": subject,
         "message": message, "priority": False, "escalation": None, "trip": trip, "new_trip": new_trip,
-        "status": "DELIVERED", "sent_at": iso(now()), "self_service_url": None,
+        "status": "DELIVERED", "sent_at": iso(now()),
+        "self_service_url": nt.portal_link(p["pnr"], p["last_name"]) if p.get("contact") else None,
+        "contact": bool(p.get("contact")),
     }
     store.notifications.append(record)
     return record
@@ -115,19 +119,23 @@ def alternatives(pnr: str, last_name: str, leg_trip_id: str):
 
 
 @router.post("/{pnr}/rebook")
-def rebook(pnr: str, body: RebookRequest):
+def rebook(pnr: str, body: RebookRequest, background: BackgroundTasks):
     with store.lock:
         p = find_passenger(pnr, body.last_name)
         record = apply_rebook(p, body.leg_trip_id, body.new_trip_id)
         new = store.trips[body.new_trip_id]
+    if p.get("contact"):
+        background.add_task(delivery.deliver, record, dict(p))
     bus.publish("traveler.rebooked", {"pnr": p["pnr"], "trip": new["number"]})
     return {"status": "rebooked", "notification": record}
 
 
 @router.post("/{pnr}/refund")
-def refund(pnr: str, body: RefundRequest):
+def refund(pnr: str, body: RefundRequest, background: BackgroundTasks):
     with store.lock:
         p = find_passenger(pnr, body.last_name)
         record = apply_refund(p, body.leg_trip_id)
+    if p.get("contact"):
+        background.add_task(delivery.deliver, record, dict(p))
     bus.publish("traveler.refunded", {"pnr": p["pnr"]})
     return {"status": "refunded", "notification": record}

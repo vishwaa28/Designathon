@@ -18,7 +18,7 @@ FLIGHT_TURN_MIN = 45
 ATR_TURN_MIN = 30
 RAKE_TURN_MIN = 75
 
-TRAIN_SPEED_KMH = {"Vande Bharat": 95, "Shatabdi": 85, "LHB": 85, "Deccan": 60}
+TRAIN_SPEED_KMH = {"Vande Bharat": 95, "Shatabdi": 85, "LHB": 80, "Intercity": 70}
 
 
 def _flight_minutes(a: str, b: str) -> int:
@@ -285,11 +285,14 @@ def generate(now: datetime) -> dict:
     for inbound in trip_list:
         arr_at, arr_t = inbound["destination"], inbound["sched_arr"]
         rules = []
-        if inbound["mode"] == "FLIGHT" and arr_at in ("DEL", "BOM"):
+        if inbound["mode"] == "FLIGHT" and arr_at == ref.HUB_AIRPORT:
             rules.append(("FLIGHT", arr_at, 60, 300, (5, 14), 2))
-            rules.append(("TRAIN", "R:NDLS" if arr_at == "DEL" else "R:CSMT", 120, 360, (3, 8), 1))
-        if inbound["mode"] == "TRAIN" and arr_at == "R:NDLS":
-            rules.append(("FLIGHT", "DEL", 150, 420, (3, 6), 1))
+            rules.append(("TRAIN", ref.HUB_STATION, 120, 360, (3, 8), 1))
+            rules.append(("TRAIN", "R:MS", 120, 360, (2, 6), 1))
+        if inbound["mode"] == "FLIGHT" and arr_at == "BLR":
+            rules.append(("FLIGHT", arr_at, 60, 300, (3, 8), 1))
+        if inbound["mode"] == "TRAIN" and arr_at in (ref.HUB_STATION, "R:MS"):
+            rules.append(("FLIGHT", ref.HUB_AIRPORT, 150, 420, (3, 6), 1))
         for mode, from_node, lo, hi, (nmin, nmax), picks in rules:
             cands = [
                 t for t in trip_list
@@ -307,6 +310,19 @@ def generate(now: datetime) -> dict:
     for tid in trips:
         while len(pax_by_trip[tid]) < targets[tid]:
             make_pax([tid])
+
+    hub_departures = [t for t in trip_list if t["origin"] == ref.HUB_AIRPORT and t["sched_dep"] >= add_min(base, 90)]
+    for i, c in enumerate(ref.CONTACT_PASSENGERS):
+        trip = hub_departures[i % len(hub_departures)] if hub_departures else trip_list[-1]
+        pid = ids.seq("P", 100001)
+        ids.pnrs.add(c["pnr"])
+        passengers[pid] = {
+            "id": pid, "pnr": c["pnr"], "first_name": c["first_name"], "last_name": c["last_name"],
+            "legs": [trip["id"]], "original_legs": [trip["id"]], "tier": c["tier"], "ssr": None,
+            "language": c["language"], "channel": "EMAIL", "cabin": "Economy", "fare": 6480,
+            "phone": c["phone"], "email": c["email"], "status": "CONFIRMED", "contact": True,
+        }
+        pax_by_trip[trip["id"]].add(pid)
 
     # ---- Assets ----------------------------------------------------------
     assets: dict[str, dict] = {}

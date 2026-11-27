@@ -131,14 +131,14 @@ export default function Orchestration() {
   const exec = selectedExec && selectedExec.node === selectedNode ? execs.find((e) => e.id === selectedExec.id) : null
 
   return (
-    <div className="space-y-5 p-6">
+    <div className="space-y-4 p-4 sm:space-y-5 sm:p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
           <span className="text-[12.5px] font-medium text-slate-500">Incident</span>
           <select
             value={incidentId || ''}
             onChange={(e) => navigate(`/orchestration/${e.target.value}`)}
-            className="h-9 min-w-[320px] rounded-lg border border-slate-300 bg-white px-3 text-[13px] focus:border-brand-500 focus:outline-none"
+            className="h-9 min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 text-[13px] focus:border-brand-500 focus:outline-none sm:min-w-[320px]"
           >
             {!list.items.length && <option value="">No incidents yet</option>}
             {list.items.map((i) => (
@@ -149,7 +149,7 @@ export default function Orchestration() {
           </select>
           {inc && <IncidentStatus status={inc.status} />}
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
           {inc && (
             <Button variant="secondary" icon={ExternalLink} onClick={() => navigate(`/incidents/${inc.id}`)}>
               Incident workspace
@@ -159,7 +159,7 @@ export default function Orchestration() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-5">
         {[
           ['Node executions', trace.length],
           ['Plan versions', inc?.plan_version ?? 0],
@@ -180,7 +180,7 @@ export default function Orchestration() {
           subtitle="LangGraph state graph · parallel fan-out, human-in-the-loop interrupt and re-planning loops"
           icon={Workflow}
           actions={
-            <div className="flex items-center gap-3 text-[11.5px] text-slate-500">
+            <div className="flex flex-wrap items-center gap-3 text-[11.5px] text-slate-500">
               {[
                 ['bg-brand-500', 'Running'],
                 ['bg-emerald-500', 'Completed'],
@@ -194,7 +194,7 @@ export default function Orchestration() {
             </div>
           }
         />
-        <div className="h-[500px] bg-[#fafbfd]">
+        <div className="h-[340px] bg-[#fafbfd] sm:h-[420px] lg:h-[500px]">
           <ReactFlow
             nodes={flow.nodes}
             edges={flow.edges}

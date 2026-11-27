@@ -36,7 +36,7 @@ function TripDrawer({ tripId, onClose }) {
         <PageLoader />
       ) : (
         <div className="space-y-6">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <TripStatus status={t.status} />
             {t.delay_min > 0 && <Badge tone="amber">+{fmtMin(t.delay_min)}</Badge>}
             {t.disruption_ids.map((d) => (
@@ -56,7 +56,7 @@ function TripDrawer({ tripId, onClose }) {
             ]}
           />
 
-          <div className="grid grid-cols-4 gap-4 rounded-lg bg-slate-50 p-4">
+          <div className="grid grid-cols-2 gap-4 rounded-lg bg-slate-50 p-4 sm:grid-cols-4">
             <Stat label="Passengers" value={fmtNum(data.passenger_count)} />
             <Stat label="Connecting" value={data.summary.connections} />
             <Stat label="Priority" value={data.summary.priority} />
@@ -74,7 +74,7 @@ function TripDrawer({ tripId, onClose }) {
                 · pairing {data.duty.trips.join(' → ')}
               </p>
             )}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               {data.crew.map((c) => (
                 <div key={c.id} className="flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2">
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500"><UserRound size={14} /></span>
@@ -104,9 +104,9 @@ function TripDrawer({ tripId, onClose }) {
           </section>
 
           <section>
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <h4 className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-900"><Users size={14} /> Passenger manifest</h4>
-              <input className={cx(inputBase, 'h-8 w-56')} placeholder="Search name or PNR" value={q} onChange={(e) => setQ(e.target.value)} />
+              <input className={cx(inputBase, 'h-8 w-full sm:w-56')} placeholder="Search name or PNR" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
             <div className="max-h-96 overflow-y-auto rounded-lg border border-slate-200">
               <Table
@@ -195,8 +195,8 @@ export default function Schedule() {
   ]
 
   return (
-    <div className="space-y-4 p-6">
-      <div className="flex flex-wrap items-center gap-3">
+    <div className="space-y-4 p-4 sm:p-6">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <Segmented
           value={mode}
           onChange={setMode}
@@ -206,15 +206,15 @@ export default function Schedule() {
             { value: 'TRAIN', label: 'Trains', icon: TrainFront },
           ]}
         />
-        <select className={cx(inputBase, 'w-44')} value={status} onChange={(e) => setStatus(e.target.value)}>
+        <select className={cx(inputBase, 'flex-1 sm:w-44 sm:flex-none')} value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">Any status</option>
           {['ON_TIME', 'BOARDING', 'DELAYED', 'EN_ROUTE', 'ARRIVED', 'CANCELLED', 'DIVERTED'].map((s) => (
             <option key={s} value={s}>{s.replace('_', ' ').toLowerCase()}</option>
           ))}
         </select>
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input className={cx(inputBase, 'w-64 pl-8')} placeholder="Service, city or vehicle" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className={cx(inputBase, 'w-full pl-8 sm:w-64')} placeholder="Service, city or vehicle" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <label className="flex items-center gap-2 text-[13px] text-slate-600">
           <input type="checkbox" checked={disrupted} onChange={(e) => setDisrupted(e.target.checked)} className="rounded border-slate-300" />
@@ -222,8 +222,30 @@ export default function Schedule() {
         </label>
         <span className="ml-auto text-[12.5px] text-slate-500">{data ? `${data.total} services` : ''}</span>
       </div>
-      <Card>
+      <Card className="hidden md:block">
         {data ? <Table columns={columns} rows={data.items} onRowClick={(t) => setTrip(t.id)} dense /> : <PageLoader />}
+      </Card>
+      <Card className="divide-y divide-slate-100 md:hidden">
+        {!data && <PageLoader />}
+        {(data?.items || []).map((t) => (
+          <button key={t.id} onClick={() => setTrip(t.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-slate-50">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
+              {t.mode === 'FLIGHT' ? <Plane size={15} /> : <TrainFront size={15} />}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[12.5px] font-semibold text-slate-900">{t.number}</span>
+                <span className="truncate text-[12.5px] font-medium text-slate-700">{t.origin} → {t.destination}</span>
+              </div>
+              <p className="mt-0.5 text-[11.5px] text-slate-500">
+                <span className={cx('tabular', t.delay_min >= 15 && 'font-semibold text-amber-700')}>{fmtTime(t.est_dep)}</span>
+                {t.delay_min >= 15 && <span className="tabular text-slate-400 line-through"> {fmtTime(t.sched_dep)}</span>}
+                {' '}· {t.booked}/{t.capacity} · {t.gate}
+              </p>
+            </div>
+            <TripStatus status={t.status} />
+          </button>
+        ))}
       </Card>
       <TripDrawer tripId={trip} onClose={() => setTrip(null)} />
     </div>

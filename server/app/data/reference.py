@@ -1,38 +1,48 @@
-"""Static reference data for the simulated multimodal network."""
+"""Static reference data for the simulated multimodal network, centred on the Chennai hub."""
 
 AIRLINE = {"code": "MR", "name": "Meridian Airways"}
-RAIL_OPERATOR = {"code": "NR", "name": "Northstar Rail"}
+RAIL_OPERATOR = {"code": "NR", "name": "Southern Rail"}
+
+HUB_AIRPORT = "MAA"
+HUB_STATION = "R:MAS"
 
 AIRPORTS = {
+    "MAA": {"name": "Chennai International", "city": "Chennai", "lat": 12.9941, "lon": 80.1709},
+    "BLR": {"name": "Kempegowda International", "city": "Bengaluru", "lat": 13.1986, "lon": 77.7066},
+    "HYD": {"name": "Rajiv Gandhi International", "city": "Hyderabad", "lat": 17.2403, "lon": 78.4294},
+    "COK": {"name": "Cochin International", "city": "Kochi", "lat": 10.1520, "lon": 76.4019},
+    "CJB": {"name": "Coimbatore International", "city": "Coimbatore", "lat": 11.0300, "lon": 77.0434},
+    "IXM": {"name": "Madurai Airport", "city": "Madurai", "lat": 9.8345, "lon": 78.0934},
+    "TRZ": {"name": "Tiruchirappalli International", "city": "Tiruchirappalli", "lat": 10.7654, "lon": 78.7097},
+    "TRV": {"name": "Thiruvananthapuram International", "city": "Thiruvananthapuram", "lat": 8.4821, "lon": 76.9201},
+    "IXE": {"name": "Mangaluru International", "city": "Mangaluru", "lat": 12.9613, "lon": 74.8901},
+    "VGA": {"name": "Vijayawada International", "city": "Vijayawada", "lat": 16.5304, "lon": 80.7968},
+    "TIR": {"name": "Tirupati Airport", "city": "Tirupati", "lat": 13.6325, "lon": 79.5433},
     "DEL": {"name": "Indira Gandhi International", "city": "Delhi", "lat": 28.5562, "lon": 77.1000},
     "BOM": {"name": "Chhatrapati Shivaji Maharaj International", "city": "Mumbai", "lat": 19.0896, "lon": 72.8656},
-    "BLR": {"name": "Kempegowda International", "city": "Bengaluru", "lat": 13.1986, "lon": 77.7066},
-    "MAA": {"name": "Chennai International", "city": "Chennai", "lat": 12.9941, "lon": 80.1709},
-    "HYD": {"name": "Rajiv Gandhi International", "city": "Hyderabad", "lat": 17.2403, "lon": 78.4294},
     "CCU": {"name": "Netaji Subhas Chandra Bose International", "city": "Kolkata", "lat": 22.6547, "lon": 88.4467},
-    "COK": {"name": "Cochin International", "city": "Kochi", "lat": 10.1520, "lon": 76.4019},
     "GOI": {"name": "Goa International", "city": "Goa", "lat": 15.3808, "lon": 73.8314},
     "PNQ": {"name": "Pune International", "city": "Pune", "lat": 18.5822, "lon": 73.9197},
-    "AMD": {"name": "Sardar Vallabhbhai Patel International", "city": "Ahmedabad", "lat": 23.0772, "lon": 72.6347},
-    "LKO": {"name": "Chaudhary Charan Singh International", "city": "Lucknow", "lat": 26.7606, "lon": 80.8893},
-    "JAI": {"name": "Jaipur International", "city": "Jaipur", "lat": 26.8242, "lon": 75.8122},
 }
 
 STATIONS = {
-    "NDLS": {"name": "New Delhi", "city": "Delhi", "lat": 28.6430, "lon": 77.2194},
-    "AGC": {"name": "Agra Cantt", "city": "Agra", "lat": 27.1588, "lon": 77.9902},
-    "BPL": {"name": "Bhopal Junction", "city": "Bhopal", "lat": 23.2665, "lon": 77.4126},
-    "JP": {"name": "Jaipur Junction", "city": "Jaipur", "lat": 26.9196, "lon": 75.7878},
-    "LKO": {"name": "Lucknow Charbagh", "city": "Lucknow", "lat": 26.8317, "lon": 80.9203},
-    "CSMT": {"name": "Mumbai CSMT", "city": "Mumbai", "lat": 18.9402, "lon": 72.8356},
-    "PUNE": {"name": "Pune Junction", "city": "Pune", "lat": 18.5286, "lon": 73.8743},
-    "ADI": {"name": "Ahmedabad Junction", "city": "Ahmedabad", "lat": 23.0262, "lon": 72.6008},
-    "SBC": {"name": "KSR Bengaluru", "city": "Bengaluru", "lat": 12.9781, "lon": 77.5697},
     "MAS": {"name": "Chennai Central", "city": "Chennai", "lat": 13.0827, "lon": 80.2752},
+    "MS": {"name": "Chennai Egmore", "city": "Chennai", "lat": 13.0780, "lon": 80.2614},
+    "AJJ": {"name": "Arakkonam Junction", "city": "Arakkonam", "lat": 13.0838, "lon": 79.6707},
+    "KPD": {"name": "Katpadi Junction", "city": "Vellore", "lat": 12.9716, "lon": 79.1378},
+    "SBC": {"name": "KSR Bengaluru", "city": "Bengaluru", "lat": 12.9781, "lon": 77.5697},
+    "SA": {"name": "Salem Junction", "city": "Salem", "lat": 11.6710, "lon": 78.1137},
+    "ED": {"name": "Erode Junction", "city": "Erode", "lat": 11.3318, "lon": 77.7280},
+    "CBE": {"name": "Coimbatore Junction", "city": "Coimbatore", "lat": 10.9965, "lon": 76.9669},
+    "VM": {"name": "Villupuram Junction", "city": "Villupuram", "lat": 11.9420, "lon": 79.4879},
+    "TPJ": {"name": "Tiruchchirappalli Junction", "city": "Tiruchirappalli", "lat": 10.7951, "lon": 78.6871},
+    "MDU": {"name": "Madurai Junction", "city": "Madurai", "lat": 9.9195, "lon": 78.1093},
+    "GDR": {"name": "Gudur Junction", "city": "Gudur", "lat": 14.1450, "lon": 79.8513},
+    "BZA": {"name": "Vijayawada Junction", "city": "Vijayawada", "lat": 16.5176, "lon": 80.6195},
     "SC": {"name": "Secunderabad Junction", "city": "Hyderabad", "lat": 17.4337, "lon": 78.5016},
 }
 
-# Station codes collide with airport codes for Lucknow, so rail nodes are namespaced internally.
+# Station codes can collide with airport codes, so rail nodes are namespaced internally.
 def station_key(code: str) -> str:
     return f"R:{code}"
 
@@ -53,61 +63,69 @@ def display_code(code: str) -> str:
 
 # Aircraft: tail, type, seats, home base, rotation destinations (out-and-back from base).
 AIRCRAFT = [
-    ("VT-MRA", "A320neo", 180, "DEL", ["BOM", "LKO"]),
-    ("VT-MRB", "A321neo", 220, "DEL", ["BLR", "JAI"]),
-    ("VT-MRT", "A320neo", 180, "DEL", ["MAA", "LKO"]),
-    ("VT-MRD", "A320neo", 180, "DEL", ["HYD", "AMD"]),
-    ("VT-MRU", "A321neo", 220, "DEL", ["BOM", "HYD"]),
-    ("VT-MRE", "A320neo", 180, "DEL", ["CCU", "JAI"]),
-    ("VT-MRF", "A321neo", 220, "DEL", ["BOM", "GOI"]),
-    ("VT-MRG", "ATR72-600", 72, "DEL", ["JAI", "LKO", "JAI"]),
-    ("VT-MRH", "A320neo", 180, "DEL", ["PNQ", "AMD"]),
-    ("VT-MRC", "A320neo", 180, "BOM", ["DEL", "GOI"]),
-    ("VT-MRJ", "B737-8", 189, "BOM", ["BLR", "AMD"]),
-    ("VT-MRK", "A320neo", 180, "BOM", ["HYD", "COK"]),
-    ("VT-MRL", "A321neo", 220, "BOM", ["DEL", "JAI"]),
-    ("VT-MRM", "A320neo", 180, "BOM", ["MAA", "GOI"]),
-    ("VT-MRN", "B737-8", 189, "BLR", ["DEL", "COK"]),
-    ("VT-MRP", "A320neo", 180, "BLR", ["BOM", "HYD"]),
-    ("VT-MRQ", "A320neo", 180, "HYD", ["DEL", "MAA"]),
+    ("VT-MRA", "A320neo", 180, "MAA", ["DEL", "BLR"]),
+    ("VT-MRB", "A321neo", 220, "MAA", ["BOM", "HYD"]),
+    ("VT-MRT", "A320neo", 180, "MAA", ["CJB", "COK"]),
+    ("VT-MRD", "A320neo", 180, "MAA", ["TRV", "HYD"]),
+    ("VT-MRU", "A321neo", 220, "MAA", ["DEL", "IXM"]),
+    ("VT-MRE", "A320neo", 180, "MAA", ["CCU", "TRZ"]),
+    ("VT-MRF", "A321neo", 220, "MAA", ["BOM", "BLR"]),
+    ("VT-MRG", "ATR72-600", 72, "MAA", ["IXM", "TRZ", "CJB"]),
+    ("VT-MRH", "ATR72-600", 72, "MAA", ["VGA", "TRZ", "VGA"]),
+    ("VT-MRC", "A320neo", 180, "MAA", ["GOI", "HYD"]),
+    ("VT-MRP", "A320neo", 180, "MAA", ["PNQ", "CJB"]),
+    ("VT-MRV", "A320neo", 180, "MAA", ["IXE", "BLR"]),
+    ("VT-MRJ", "B737-8", 189, "BLR", ["MAA", "DEL"]),
+    ("VT-MRK", "A320neo", 180, "HYD", ["MAA", "COK"]),
+    ("VT-MRL", "A321neo", 220, "DEL", ["MAA", "BOM"]),
+    ("VT-MRM", "A320neo", 180, "BOM", ["MAA", "BLR"]),
+    ("VT-MRN", "B737-8", 189, "COK", ["MAA", "BLR"]),
+    ("VT-MRQ", "A320neo", 180, "BLR", ["HYD", "MAA"]),
 ]
-SPARE_AIRCRAFT = [("VT-MRS", "A320neo", 180, "DEL")]
+SPARE_AIRCRAFT = [("VT-MRS", "A320neo", 180, "BLR")]
 
 # Rail rakes: rake id, type, seats, route (stations in order). Each rake runs an out-and-back.
+# List order sets the first departure (55 min apart from four hours before the current hour), so
+# rakes through the scenario corridors are spaced to be on the line around "now".
 RAKES = [
-    ("RK-201", "Vande Bharat 16-car", 420, ["NDLS", "AGC"]),
-    ("RK-202", "LHB 22-coach", 460, ["NDLS", "AGC", "BPL"]),
-    ("RK-203", "Vande Bharat 16-car", 420, ["NDLS", "AGC", "BPL"]),
-    ("RK-204", "LHB 22-coach", 460, ["NDLS", "AGC"]),
-    ("RK-205", "Shatabdi 18-coach", 380, ["NDLS", "JP"]),
-    ("RK-206", "Shatabdi 18-coach", 380, ["NDLS", "LKO"]),
-    ("RK-207", "LHB 22-coach", 460, ["NDLS", "AGC", "BPL"]),
-    ("RK-208", "Deccan 16-coach", 360, ["CSMT", "PUNE"]),
-    ("RK-209", "Deccan 16-coach", 360, ["CSMT", "PUNE"]),
-    ("RK-210", "Vande Bharat 8-car", 300, ["CSMT", "ADI"]),
-    ("RK-211", "Shatabdi 18-coach", 380, ["SBC", "MAS"]),
-    ("RK-212", "LHB 22-coach", 460, ["MAS", "SC"]),
-    ("RK-213", "Vande Bharat 8-car", 300, ["NDLS", "JP"]),
-    ("RK-214", "Deccan 16-coach", 360, ["CSMT", "PUNE"]),
-    ("RK-215", "Shatabdi 18-coach", 380, ["SBC", "MAS"]),
+    ("RK-205", "Vande Bharat 8-car", 300, ["MS", "VM", "TPJ", "MDU"]),
+    ("RK-201", "Vande Bharat 16-car", 420, ["MAS", "AJJ", "KPD", "SBC"]),
+    ("RK-206", "LHB 22-coach", 460, ["MS", "VM", "TPJ", "MDU"]),
+    ("RK-202", "Shatabdi 18-coach", 380, ["MAS", "AJJ", "KPD", "SBC"]),
+    ("RK-209", "Intercity 16-coach", 360, ["MAS", "AJJ", "KPD"]),
+    ("RK-203", "Vande Bharat 8-car", 300, ["MAS", "AJJ", "KPD", "SA", "ED", "CBE"]),
+    ("RK-207", "LHB 22-coach", 460, ["MAS", "GDR", "BZA", "SC"]),
+    ("RK-211", "Shatabdi 18-coach", 380, ["MAS", "AJJ", "KPD", "SBC"]),
+    ("RK-208", "Vande Bharat 8-car", 300, ["MAS", "GDR", "BZA"]),
+    ("RK-204", "LHB 22-coach", 460, ["MAS", "AJJ", "KPD", "SA", "ED", "CBE"]),
+    ("RK-210", "Intercity 16-coach", 360, ["MS", "VM", "TPJ"]),
+    ("RK-213", "LHB 22-coach", 460, ["MAS", "AJJ", "KPD", "SA", "ED", "CBE"]),
+    ("RK-212", "Intercity 16-coach", 360, ["MAS", "GDR"]),
+    ("RK-215", "Intercity 16-coach", 360, ["MAS", "AJJ"]),
+    ("RK-214", "Shatabdi 18-coach", 380, ["MS", "VM", "TPJ", "MDU"]),
 ]
 
 FIRST_NAMES = [
-    "Aarav", "Vivaan", "Aditya", "Arjun", "Reyansh", "Ishaan", "Kabir", "Rohan", "Siddharth", "Vikram",
-    "Rahul", "Karthik", "Nikhil", "Pranav", "Imran", "Joseph", "Ananya", "Diya", "Isha", "Kavya",
-    "Meera", "Nisha", "Pooja", "Riya", "Saanvi", "Sneha", "Tanvi", "Aditi", "Lakshmi", "Fatima",
-    "Priya", "Divya", "Neha", "Shreya", "Anjali", "Sara", "Harini", "Gayatri", "Zoya", "Maria",
+    "Karthik", "Arjun", "Vignesh", "Surya", "Prakash", "Saravanan", "Senthil", "Murugan", "Balaji", "Dinesh",
+    "Gokul", "Hari", "Ashwin", "Pradeep", "Naveen", "Sanjay", "Venkatesh", "Srinivas", "Ravi", "Manoj",
+    "Abhishek", "Rahul", "Anand", "Vishnu", "Akhil", "Arun", "Sreejith", "Nithin", "Kiran", "Raghav",
+    "Priya", "Divya", "Lakshmi", "Meenakshi", "Kavya", "Deepika", "Swathi", "Harini", "Gayathri", "Nandhini",
+    "Keerthana", "Aishwarya", "Revathi", "Sangeetha", "Janani", "Anitha", "Bhavana", "Sowmya", "Pavithra", "Ramya",
+    "Anjali", "Aparna", "Sneha", "Sruthi", "Shalini", "Malavika", "Nivetha", "Yamini", "Haritha", "Sindhu",
 ]
 LAST_NAMES = [
-    "Sharma", "Verma", "Iyer", "Nair", "Reddy", "Rao", "Patel", "Shah", "Mehta", "Gupta",
-    "Singh", "Kapoor", "Menon", "Pillai", "Banerjee", "Chatterjee", "Das", "Mukherjee", "Kulkarni", "Joshi",
-    "Deshpande", "Khan", "Fernandes", "D'Souza", "Agarwal", "Bhat", "Hegde", "Naidu", "Ghosh", "Malhotra",
+    "Iyer", "Iyengar", "Krishnan", "Subramanian", "Rajan", "Natarajan", "Venkatesan", "Ramasamy", "Murugesan",
+    "Shanmugam", "Arumugam", "Annamalai", "Selvaraj", "Sundaram", "Balasubramanian", "Ganesan", "Srinivasan",
+    "Raghavan", "Pillai", "Nair", "Menon", "Kurup", "Varghese", "Kuriakose", "Thomas", "Reddy", "Naidu",
+    "Rao", "Chowdary", "Varma", "Gowda", "Hegde", "Shetty", "Kamath", "Bhat", "Chandrasekaran", "Palanisamy",
 ]
 
 CITY_LANGUAGE = {
-    "Delhi": "hi", "Agra": "hi", "Bhopal": "hi", "Jaipur": "hi", "Lucknow": "hi",
-    "Mumbai": "mr", "Pune": "mr", "Ahmedabad": "gu", "Goa": "en",
-    "Bengaluru": "kn", "Chennai": "ta", "Hyderabad": "te", "Kolkata": "bn", "Kochi": "ml",
+    "Chennai": "ta", "Arakkonam": "ta", "Vellore": "ta", "Salem": "ta", "Erode": "ta", "Coimbatore": "ta",
+    "Villupuram": "ta", "Tiruchirappalli": "ta", "Madurai": "ta",
+    "Hyderabad": "te", "Vijayawada": "te", "Gudur": "te", "Tirupati": "te",
+    "Bengaluru": "kn", "Mangaluru": "kn", "Kochi": "ml", "Thiruvananthapuram": "ml",
+    "Delhi": "hi", "Mumbai": "mr", "Pune": "mr", "Kolkata": "bn", "Goa": "en",
 }
 
 LANGUAGES = {
@@ -115,52 +133,67 @@ LANGUAGES = {
     "ta": "Tamil", "te": "Telugu", "bn": "Bengali", "ml": "Malayalam",
 }
 
+# Passengers with real contact details. They are seeded on every run and attached to the
+# services hit by each disruption so they receive the e-mail / SMS notifications.
+CONTACT_PASSENGERS = [
+    {"pnr": "VSHWA1", "first_name": "Vishwaa", "last_name": "Yuvaraj", "email": "vishwaayuvaraj@gmail.com",
+     "phone": "+919597458656", "language": "en", "tier": "GOLD"},
+    {"pnr": "TAUSF2", "first_name": "Lathifunisa", "last_name": "Tausifa", "email": "lathifunisatausifa@gmail.com",
+     "phone": "+918610472292", "language": "en", "tier": None},
+    {"pnr": "AMALS3", "first_name": "Amal", "last_name": "Sivan", "email": "amalsivan1753@gmail.com",
+     "phone": "+918897439734", "language": "en", "tier": "SILVER"},
+    {"pnr": "SUSHM4", "first_name": "Sushmitha", "last_name": "Saravanan", "email": "sus200327@gmail.com",
+     "phone": "+916381758235", "language": "en", "tier": None},
+]
+
 MAINTENANCE_TEAMS = [
-    {"id": "MT-SNT-NDLS", "name": "Signal & Telecom Response, New Delhi", "skill": "SIGNALLING", "base": "R:NDLS", "eta_min": 55, "members": 4},
-    {"id": "MT-SNT-AGC", "name": "Signal & Telecom Response, Agra", "skill": "SIGNALLING", "base": "R:AGC", "eta_min": 40, "members": 3},
-    {"id": "MT-PWAY-CSMT", "name": "Permanent Way & Track, Mumbai", "skill": "TRACK", "base": "R:CSMT", "eta_min": 70, "members": 6},
-    {"id": "MT-OHE-NDLS", "name": "Overhead Equipment Unit, New Delhi", "skill": "OHE", "base": "R:NDLS", "eta_min": 45, "members": 5},
-    {"id": "MT-AIRSIDE-DEL", "name": "Airside Operations & Runway Safety, DEL", "skill": "AIRSIDE", "base": "DEL", "eta_min": 10, "members": 8},
-    {"id": "MT-AIRSIDE-BOM", "name": "Airside Operations & Runway Safety, BOM", "skill": "AIRSIDE", "base": "BOM", "eta_min": 10, "members": 6},
-    {"id": "MT-LINE-BOM", "name": "Line Maintenance B1/B2, BOM", "skill": "AIRCRAFT", "base": "BOM", "eta_min": 20, "members": 4},
-    {"id": "MT-LINE-DEL", "name": "Line Maintenance B1/B2, DEL", "skill": "AIRCRAFT", "base": "DEL", "eta_min": 20, "members": 5},
+    {"id": "MT-AIRSIDE-MAA", "name": "Airside Operations & Runway Safety, MAA", "skill": "AIRSIDE", "base": "MAA", "eta_min": 10, "members": 8},
+    {"id": "MT-LINE-MAA", "name": "Line Maintenance B1/B2, MAA", "skill": "AIRCRAFT", "base": "MAA", "eta_min": 15, "members": 6},
+    {"id": "MT-AIRSIDE-BLR", "name": "Airside Operations & Runway Safety, BLR", "skill": "AIRSIDE", "base": "BLR", "eta_min": 12, "members": 6},
+    {"id": "MT-LINE-BLR", "name": "Line Maintenance B1/B2, BLR", "skill": "AIRCRAFT", "base": "BLR", "eta_min": 25, "members": 4},
+    {"id": "MT-SNT-MAS", "name": "Signal & Telecom Response, Chennai Central", "skill": "SIGNALLING", "base": "R:MAS", "eta_min": 40, "members": 4},
+    {"id": "MT-SNT-AJJ", "name": "Signal & Telecom Response, Arakkonam", "skill": "SIGNALLING", "base": "R:AJJ", "eta_min": 35, "members": 3},
+    {"id": "MT-PWAY-MAS", "name": "Permanent Way & Track, Chennai", "skill": "TRACK", "base": "R:MAS", "eta_min": 60, "members": 6},
+    {"id": "MT-OHE-MS", "name": "Overhead Equipment Unit, Chennai Egmore", "skill": "OHE", "base": "R:MS", "eta_min": 45, "members": 5},
 ]
 
 INFRA_ASSETS = [
-    {"id": "DEL-RWY-1028", "name": "Runway 10/28", "type": "RUNWAY", "category": "Airside", "location": "DEL",
-     "criticality": "CRITICAL", "metrics": {"friction_coefficient": 0.72, "standing_water_mm": 0.0, "crosswind_kt": 6.0}},
-    {"id": "DEL-RWY-1129", "name": "Runway 11/29", "type": "RUNWAY", "category": "Airside", "location": "DEL",
-     "criticality": "CRITICAL", "metrics": {"friction_coefficient": 0.70, "standing_water_mm": 0.0, "crosswind_kt": 5.0}},
-    {"id": "DEL-ILS-28", "name": "ILS CAT-IIIB Runway 28", "type": "NAVAID", "category": "Airside", "location": "DEL",
-     "criticality": "HIGH", "metrics": {"localizer_signal_dbm": -62.0, "glide_slope_dev_deg": 0.02}},
-    {"id": "BOM-RWY-0927", "name": "Runway 09/27", "type": "RUNWAY", "category": "Airside", "location": "BOM",
-     "criticality": "CRITICAL", "metrics": {"friction_coefficient": 0.69, "standing_water_mm": 0.0, "crosswind_kt": 8.0}},
-    {"id": "BLR-BHS-02", "name": "Baggage Sorter Line 2", "type": "BAGGAGE", "category": "Terminal", "location": "BLR",
-     "criticality": "MEDIUM", "metrics": {"throughput_bags_hr": 2650.0, "jam_rate_pct": 0.4}},
-    {"id": "NR-SIG-BS114", "name": "Block Signal BS-114 (Interlocking)", "type": "SIGNAL", "category": "Signalling",
-     "location": "R:NDLS", "corridor": ["R:NDLS", "R:AGC"], "criticality": "CRITICAL",
+    {"id": "MAA-RWY-0725", "name": "Runway 07/25", "type": "RUNWAY", "category": "Airside", "location": "MAA",
+     "criticality": "CRITICAL", "metrics": {"friction_coefficient": 0.71, "standing_water_mm": 0.0, "crosswind_kt": 7.0}},
+    {"id": "MAA-RWY-1230", "name": "Runway 12/30", "type": "RUNWAY", "category": "Airside", "location": "MAA",
+     "criticality": "CRITICAL", "metrics": {"friction_coefficient": 0.69, "standing_water_mm": 0.0, "crosswind_kt": 6.0}},
+    {"id": "MAA-ILS-07", "name": "ILS CAT-II Runway 07", "type": "NAVAID", "category": "Airside", "location": "MAA",
+     "criticality": "HIGH", "metrics": {"localizer_signal_dbm": -61.0, "glide_slope_dev_deg": 0.02}},
+    {"id": "MAA-BHS-T1", "name": "Baggage Sorter, Terminal 1", "type": "BAGGAGE", "category": "Terminal", "location": "MAA",
+     "criticality": "MEDIUM", "metrics": {"throughput_bags_hr": 2400.0, "jam_rate_pct": 0.5}},
+    {"id": "BLR-RWY-09L", "name": "Runway 09L/27R", "type": "RUNWAY", "category": "Airside", "location": "BLR",
+     "criticality": "CRITICAL", "metrics": {"friction_coefficient": 0.72, "standing_water_mm": 0.0, "crosswind_kt": 5.0}},
+    {"id": "NR-SIG-AJJ14", "name": "Block Signal AJJ-14 (Interlocking)", "type": "SIGNAL", "category": "Signalling",
+     "location": "R:MAS", "corridor": ["R:MAS", "R:AJJ"], "criticality": "CRITICAL",
      "metrics": {"relay_voltage_v": 24.1, "response_ms": 118.0, "track_circuit_ohm": 3.2}},
-    {"id": "NR-PM-22", "name": "Point Machine PM-22", "type": "POINT_MACHINE", "category": "Signalling",
-     "location": "R:AGC", "corridor": ["R:NDLS", "R:AGC"], "criticality": "HIGH",
+    {"id": "NR-PM-KPD22", "name": "Point Machine PM-22, Katpadi", "type": "POINT_MACHINE", "category": "Signalling",
+     "location": "R:KPD", "corridor": ["R:AJJ", "R:KPD"], "criticality": "HIGH",
      "metrics": {"throw_time_s": 4.1, "motor_current_a": 3.8}},
-    {"id": "NR-OHE-LKO7", "name": "OHE Section NDLS-LKO km 7", "type": "OHE", "category": "Traction",
-     "location": "R:NDLS", "corridor": ["R:NDLS", "R:LKO"], "criticality": "HIGH",
+    {"id": "NR-OHE-MSVM", "name": "OHE Section Egmore-Villupuram km 34", "type": "OHE", "category": "Traction",
+     "location": "R:MS", "corridor": ["R:MS", "R:VM"], "criticality": "HIGH",
      "metrics": {"catenary_voltage_kv": 25.0, "tension_kn": 10.2}},
-    {"id": "NR-TC-48", "name": "Track Circuit TC-48 (Ghat Section)", "type": "TRACK_CIRCUIT", "category": "Track",
-     "location": "R:CSMT", "corridor": ["R:CSMT", "R:PUNE"], "criticality": "CRITICAL",
-     "metrics": {"rail_temp_c": 31.0, "shunt_resistance_ohm": 0.4, "water_above_rail_mm": 0.0}},
+    {"id": "NR-TC-31", "name": "Track Circuit TC-31 (Ennore-Ponneri)", "type": "TRACK_CIRCUIT", "category": "Track",
+     "location": "R:MAS", "corridor": ["R:MAS", "R:GDR"], "criticality": "CRITICAL",
+     "metrics": {"rail_temp_c": 30.0, "shunt_resistance_ohm": 0.4, "water_above_rail_mm": 0.0}},
 ]
 
 # Reserve / standby crew available at each base.
 RESERVE_CREW = {
-    "DEL": {"CPT": 2, "FO": 2, "CC": 6},
-    "BOM": {"CPT": 2, "FO": 1, "CC": 4},
-    "BLR": {"CPT": 1, "FO": 1, "CC": 2},
+    "MAA": {"CPT": 3, "FO": 3, "CC": 8},
+    "BLR": {"CPT": 2, "FO": 2, "CC": 4},
     "HYD": {"CPT": 1, "FO": 1, "CC": 2},
-    "R:NDLS": {"LP": 3, "ALP": 3, "GRD": 2},
-    "R:CSMT": {"LP": 2, "ALP": 2, "GRD": 2},
+    "COK": {"CPT": 1, "FO": 1, "CC": 2},
+    "DEL": {"CPT": 1, "FO": 1, "CC": 2},
+    "BOM": {"CPT": 1, "FO": 1, "CC": 2},
+    "R:MAS": {"LP": 3, "ALP": 3, "GRD": 3},
     "R:SBC": {"LP": 1, "ALP": 1, "GRD": 1},
-    "R:MAS": {"LP": 1, "ALP": 1, "GRD": 1},
+    "R:CBE": {"LP": 1, "ALP": 1, "GRD": 1},
+    "R:MDU": {"LP": 1, "ALP": 1, "GRD": 1},
 }
 
 ROLE_LABELS = {

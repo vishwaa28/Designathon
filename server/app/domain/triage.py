@@ -78,7 +78,7 @@ def triage(asset: dict, detection: dict, adjustments: dict | None = None) -> dic
     parts = []
     for c in causes:
         parts.append({"part": c["part"], "available": c["local"],
-                      "source": f"Local stores ({ref.display_code(team['base'])})" if c["local"] else "Central stores, DEL (150 min lead)"})
+                      "source": f"Local stores ({ref.display_code(team['base'])})" if c["local"] else "Central stores, BLR (150 min lead)"})
     return {
         "asset": store.asset_view(asset),
         "fault_type": detection["type"],

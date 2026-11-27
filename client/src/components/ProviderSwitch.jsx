@@ -20,7 +20,7 @@ function AzureMark() {
   )
 }
 
-export default function ProviderSwitch() {
+export default function ProviderSwitch({ dark }) {
   const { data, setData } = useApi('/settings/llm', { refreshOn: ['settings.'] })
   const [error, setError] = useState(null)
   if (!data) return null
@@ -36,9 +36,9 @@ export default function ProviderSwitch() {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="hidden text-[11.5px] font-medium uppercase tracking-wide text-slate-400 xl:inline">Model</span>
-      <div className="inline-flex rounded-lg bg-slate-100 p-0.5" title={error || undefined}>
+    <div className={cx('flex items-center gap-2', dark && 'flex-col items-start gap-1.5')}>
+      <span className={cx('text-[11.5px] font-medium uppercase tracking-wide text-slate-400', dark ? 'text-[10.5px] text-slate-500' : 'hidden xl:inline')}>Model</span>
+      <div className={cx('inline-flex rounded-lg p-0.5', dark ? 'bg-white/[0.08]' : 'bg-slate-100')} title={error || undefined}>
         {data.providers.map((p) => {
           const active = data.active === p.id
           return (
@@ -49,13 +49,13 @@ export default function ProviderSwitch() {
               title={p.configured ? `${p.label} · ${p.model}` : `${p.label}: API key not configured`}
               className={cx(
                 'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12.5px] font-medium transition-all',
-                active ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700',
+                active ? 'bg-white text-slate-900 shadow-sm' : dark ? 'text-slate-300 hover:text-white' : 'text-slate-500 hover:text-slate-700',
                 !p.configured && 'cursor-not-allowed opacity-45 hover:text-slate-500',
               )}
             >
               {p.id === 'gemini' ? <GeminiMark /> : <AzureMark />}
               {p.id === 'gemini' ? 'Gemini' : 'Azure Foundry'}
-              {active && <span className="font-mono text-[10.5px] text-slate-400">{p.model}</span>}
+              {active && !dark && <span className="font-mono text-[10.5px] text-slate-400">{p.model}</span>}
             </button>
           )
         })}

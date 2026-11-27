@@ -98,7 +98,7 @@ def incident_notifications(incident_id: str, outcome: str | None = None, languag
     if q:
         ql = q.lower()
         rows = [n for n in rows if ql in f"{n['pnr']} {n['name']} {n['trip']}".lower()]
-    rows.sort(key=lambda n: (not n["priority"], n["name"]))
+    rows.sort(key=lambda n: (not n.get("contact"), not n["priority"], n["name"]))
     return {"total": len(rows), "items": rows[offset:offset + limit]}
 
 

@@ -11,9 +11,10 @@ from app.domain.geo import segment_km
 MIN_TURN = {"FLIGHT": 35, "TRAIN": 45}
 CREW_RELEASE_MIN = 30
 RESERVE_FALLBACK = {
-    "R:AGC": "R:NDLS", "R:BPL": "R:NDLS", "R:JP": "R:NDLS", "R:LKO": "R:NDLS",
-    "R:PUNE": "R:CSMT", "R:ADI": "R:CSMT", "R:SC": "R:MAS",
-    "JAI": "DEL", "LKO": "DEL", "AMD": "BOM", "GOI": "BOM", "PNQ": "BOM", "COK": "BLR", "MAA": "BLR", "CCU": "DEL",
+    "R:MS": "R:MAS", "R:AJJ": "R:MAS", "R:KPD": "R:MAS", "R:GDR": "R:MAS", "R:BZA": "R:MAS", "R:SC": "R:MAS",
+    "R:VM": "R:MAS", "R:SA": "R:CBE", "R:ED": "R:CBE", "R:TPJ": "R:MDU",
+    "CJB": "MAA", "IXM": "MAA", "TRZ": "MAA", "TRV": "COK", "IXE": "BLR", "VGA": "HYD", "TIR": "MAA",
+    "GOI": "BOM", "PNQ": "BOM", "CCU": "DEL",
 }
 
 

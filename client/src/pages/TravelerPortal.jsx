@@ -12,15 +12,15 @@ function Leg({ leg, actionable, attention, active, onManage }) {
   const Icon = leg.mode === 'FLIGHT' ? Plane : TrainFront
   return (
     <div className={cx('rounded-xl border bg-white p-4', attention ? 'border-amber-300' : 'border-slate-200', active && 'ring-2 ring-brand-100')}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-[12.5px] text-slate-500">
-          <Icon size={15} /> {leg.operator} · <span className="font-mono font-semibold text-slate-700">{leg.number}</span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2 text-[12.5px] text-slate-500">
+          <Icon size={15} className="shrink-0" /> <span className="truncate">{leg.operator}</span> · <span className="font-mono font-semibold text-slate-700">{leg.number}</span>
         </div>
         <TripStatus status={leg.status} />
       </div>
-      <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-        <div>
-          <p className="text-[22px] font-semibold tracking-tight text-slate-900">{leg.origin}</p>
+      <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4">
+        <div className="min-w-0">
+          <p className="text-[20px] font-semibold tracking-tight text-slate-900 sm:text-[22px]">{leg.origin}</p>
           <p className="text-[12px] text-slate-500">{leg.origin_city}</p>
           <p className="tabular mt-1 text-[14px] font-semibold text-slate-800">
             {fmtTime(leg.est_dep)}
@@ -31,13 +31,13 @@ function Leg({ leg, actionable, attention, active, onManage }) {
           <ArrowRight size={18} />
           {leg.delay_min > 0 && <span className="mt-1 text-[11px] font-medium text-amber-600">+{fmtMin(leg.delay_min)}</span>}
         </div>
-        <div className="text-right">
-          <p className="text-[22px] font-semibold tracking-tight text-slate-900">{leg.destination}</p>
+        <div className="min-w-0 text-right">
+          <p className="text-[20px] font-semibold tracking-tight text-slate-900 sm:text-[22px]">{leg.destination}</p>
           <p className="text-[12px] text-slate-500">{leg.destination_city}</p>
           <p className="tabular mt-1 text-[14px] font-semibold text-slate-800">{fmtTime(leg.est_arr)}</p>
         </div>
       </div>
-      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-[12px] text-slate-500">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-[12px] text-slate-500">
         <span>{leg.mode === 'FLIGHT' ? 'Gate' : 'Platform'} {leg.gate}{leg.remarks && ` · ${leg.remarks}`}</span>
         {actionable && (
           <Button size="sm" variant={active ? 'primary' : 'secondary'} onClick={onManage}>
@@ -135,20 +135,22 @@ export default function TravelerPortal() {
   return (
     <div className="relative min-h-full bg-canvas">
       <div className="absolute inset-x-0 top-0 h-[230px] bg-navy-900" />
-      <header className="relative mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
-        <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white"><Plane size={18} /></span>
-          <div className="leading-tight">
-            <p className="text-[15px] font-semibold text-white">Meridian Airways · Northstar Rail</p>
+      <header className="relative mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white"><Plane size={18} /></span>
+          <div className="min-w-0 leading-tight">
+            <p className="truncate text-[14px] font-semibold text-white sm:text-[15px]">Meridian Airways · Southern Rail</p>
             <p className="text-[12px] text-slate-400">Manage your trip</p>
           </div>
         </div>
-        <span className="text-[12px] text-slate-400">Help desk 1800 200 4040</span>
+        <a href="tel:18002004040" className="shrink-0 text-[12px] text-slate-400 hover:text-white">
+          <span className="hidden sm:inline">Help desk </span>1800 200 4040
+        </a>
       </header>
 
-      <main className="relative mx-auto max-w-5xl space-y-5 px-6 pb-16">
-        <Card className="p-6">
-          <h1 className="text-[20px] font-semibold tracking-tight text-slate-900">Find your booking</h1>
+      <main className="relative mx-auto max-w-5xl space-y-4 px-3 pb-16 sm:space-y-5 sm:px-6">
+        <Card className="p-4 sm:p-6">
+          <h1 className="text-[18px] font-semibold tracking-tight text-slate-900 sm:text-[20px]">Find your booking</h1>
           <p className="mt-1 text-[13px] text-slate-500">Check live status, see changes to your journey and rebook yourself without queuing at the desk.</p>
           <form onSubmit={lookup} className="mt-5 grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
             <Field label="Booking reference (PNR)">
@@ -157,7 +159,7 @@ export default function TravelerPortal() {
             <Field label="Last name">
               <input className={cx(inputClass, 'h-10')} value={name} onChange={(e) => setName(e.target.value)} placeholder="As on ticket" />
             </Field>
-            <Button size="lg" icon={Search} loading={busy && !booking} type="submit">Find booking</Button>
+            <Button size="lg" icon={Search} loading={busy && !booking} type="submit" className="w-full sm:w-auto">Find booking</Button>
           </form>
           {error && <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-[13px] text-rose-700">{error}</p>}
         </Card>
@@ -165,7 +167,7 @@ export default function TravelerPortal() {
         <VoiceAgent key={booking?.passenger?.pnr || 'none'} booking={booking} onBookingChanged={refreshBooking} />
 
         {confirmation && (
-          <div className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4">
+          <div className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 sm:px-5">
             <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-emerald-600" />
             <div>
               <p className="text-[14px] font-semibold text-emerald-900">{confirmation.subject}</p>
@@ -178,7 +180,7 @@ export default function TravelerPortal() {
           <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
             <div className="space-y-4">
               {latest && !confirmation && (settled || booking.actionable_legs.length > 0) && (
-                <div className={cx('flex gap-3 rounded-xl border px-5 py-4', settled ? 'border-slate-200 bg-white' : 'border-amber-200 bg-amber-50')}>
+                <div className={cx('flex gap-3 rounded-xl border px-4 py-4 sm:px-5', settled ? 'border-slate-200 bg-white' : 'border-amber-200 bg-amber-50')}>
                   {settled ? (
                     <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-emerald-600" />
                   ) : (
@@ -211,8 +213,8 @@ export default function TravelerPortal() {
                   <div className="divide-y divide-slate-100">
                     {!alts && <p className="px-5 py-6 text-center text-[13px] text-slate-400">Searching…</p>}
                     {alts?.items.map((a) => (
-                      <div key={a.id} className="flex items-center gap-4 px-5 py-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                      <div key={a.id} className="flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-5">
+                        <span className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 sm:flex">
                           {a.mode === 'FLIGHT' ? <Plane size={16} /> : <TrainFront size={16} />}
                         </span>
                         <div className="min-w-0 flex-1">
@@ -232,7 +234,7 @@ export default function TravelerPortal() {
                       <p className="px-5 py-6 text-center text-[13px] text-slate-500">No alternatives with open seats. You can request a full refund.</p>
                     )}
                   </div>
-                  <div className="flex justify-between border-t border-slate-100 px-5 py-3">
+                  <div className="flex flex-wrap justify-between gap-2 border-t border-slate-100 px-4 py-3 sm:px-5">
                     <Button variant="ghost" size="sm" onClick={() => setManaging(null)}>Keep current booking</Button>
                     <Button variant="danger" size="sm" icon={Undo2} onClick={refund}>Request full refund</Button>
                   </div>

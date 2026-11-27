@@ -32,9 +32,9 @@ COST = {
 }
 COACH_SEATS = 50
 REBOOK_HORIZON_MIN = 18 * 60
-ALTERNATES = {"DEL": [("JAI", 300), ("LKO", 480)], "BOM": [("PNQ", 210), ("AMD", 480)]}
-RAIL_DIVERSION = {frozenset({"R:NDLS", "R:AGC"}): ("Mathura-Alwar-Bayana", 95)}
-BUS_BRIDGE_MIN = {frozenset({"R:NDLS", "R:AGC"}): 240, frozenset({"R:CSMT", "R:PUNE"}): 210}
+ALTERNATES = {"MAA": [("TIR", 210), ("BLR", 360)], "BLR": [("MAA", 360), ("CJB", 420)]}
+RAIL_DIVERSION = {frozenset({"R:MAS", "R:AJJ"}): ("Chennai Beach-Chengalpattu-Arakkonam", 85)}
+BUS_BRIDGE_MIN = {frozenset({"R:MAS", "R:AJJ"}): 150, frozenset({"R:MAS", "R:GDR"}): 210}
 
 
 def _alt_index() -> dict[tuple[str, str], list[str]]:

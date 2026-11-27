@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertOctagon, Network, Plane, TrainFront, UserRound, Users } from 'lucide-react'
+import { AlertOctagon, Mail, Network, Plane, TrainFront, UserRound, Users } from 'lucide-react'
 import { fmtINR, fmtMin, fmtNum, fmtTime } from '../../lib/format'
 import { Badge, Card, CardHeader, Segmented, Stat, Table, cx } from '../ui'
 
@@ -68,7 +68,7 @@ export default function ImpactPanel({ inc }) {
 
   return (
     <div className="space-y-5">
-      <Card className="grid grid-cols-2 gap-5 p-5 md:grid-cols-4 xl:grid-cols-7">
+      <Card className="grid grid-cols-2 gap-4 p-4 sm:gap-5 sm:p-5 md:grid-cols-4 xl:grid-cols-7">
         <Stat label="Direct services" value={s.trips_direct} />
         <Stat label="Cascade services" value={s.trips_cascade} tone="brand" />
         <Stat label="Passengers" value={fmtNum(s.pax_affected)} tone="amber" />
@@ -78,7 +78,23 @@ export default function ImpactPanel({ inc }) {
         <Stat label="Cost if no action" value={fmtINR(s.baseline_cost)} />
       </Card>
 
-      <Card className="p-5">
+      {imp.contact_passengers?.length > 0 && (
+        <Card className="p-4 sm:p-5">
+          <p className="flex items-center gap-2 text-[13px] font-semibold text-slate-900">
+            <Mail size={15} className="text-brand-600" /> Travelers receiving e-mail & SMS on affected services
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            {imp.contact_passengers.map((c) => (
+              <div key={c.pnr} className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 text-[12.5px]">
+                <span className="truncate font-medium text-slate-800">{c.name}</span>
+                <span className="shrink-0 font-mono text-slate-500">{c.trip}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      <Card className="p-4 sm:p-5">
         <p className="flex items-center gap-2 text-[13px] font-semibold text-slate-900">
           <Network size={15} className="text-violet-600" /> How the disruption cascades
         </p>
@@ -103,7 +119,7 @@ export default function ImpactPanel({ inc }) {
           <div className="space-y-3 p-4">
             {imp.crew_breaches.map((b) => (
               <div key={b.pairing_id} className="rounded-lg border border-rose-100 bg-rose-50/40 p-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-[13px] font-semibold text-slate-900">
                     Pairing {b.pairing_id} <span className="font-normal text-slate-500">· {b.trips.join(' → ')}</span>
                   </p>

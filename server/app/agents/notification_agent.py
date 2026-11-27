@@ -10,6 +10,7 @@ from app.core.utils import iso, now
 from app.data import reference as ref
 from app.data.store import is_priority, store
 from app.domain import notifications as nt
+from app.services import delivery
 
 SYSTEM = ("You write proactive traveler notifications for an airline and rail operator. Messages are short "
           "(under 320 characters), empathetic, specific and actionable. You are fluent in Indian languages.")
@@ -99,12 +100,19 @@ def notification_node(state: dict) -> tuple[dict, dict]:
 
     sent_at = iso(now())
     records = []
+    outbound = []
     with store.lock:
         for pid, o in outcomes.items():
             p = store.passengers[pid]
             templates, used_lang = templates_for(p["language"])
             body = (nt.render(templates[o["type"]], p, o, reasons.get(used_lang, reason_en), used_lang)
                     + nt.priority_line(p, templates))
+            if p.get("contact"):
+                english = None
+                if used_lang != "en":
+                    en_templates, _ = templates_for("en")
+                    english = nt.render(en_templates[o["type"]], p, o, reason_en, "en")
+                outbound.append((len(records), dict(p), english))
             records.append({
                 "id": store.next_id("NTF", 100001),
                 "incident_id": incident_id,
@@ -125,8 +133,11 @@ def notification_node(state: dict) -> tuple[dict, dict]:
                 "status": "DELIVERED",
                 "sent_at": sent_at,
                 "self_service_url": nt.portal_link(p["pnr"], p["last_name"]),
+                "contact": bool(p.get("contact")),
             })
         store.notifications.extend(records)
+
+    delivery_counts = delivery.deliver_many([(records[i], pax, english) for i, pax, english in outbound])
 
     summary = {
         "total": len(records),
@@ -137,12 +148,14 @@ def notification_node(state: dict) -> tuple[dict, dict]:
         "agent_calls": sum(1 for r in records if r["escalation"]),
         "sent_at": sent_at,
         "plan_changes": changes,
+        "delivery": delivery_counts,
         "template_source": call.provider if model_templates else "built-in templates",
     }
     update_incident(incident_id, notifications=summary, status="RESOLVED", resolved_at=sent_at)
     bus.publish("notifications.sent", {"incident_id": incident_id, "total": len(records)})
     return {"notifications": summary}, {
         "summary": (f"{len(records)} travelers notified in {len(summary['by_language'])} languages; "
+                    f"{delivery_counts['email_sent']} e-mails and {delivery_counts['sms_sent']} SMS sent; "
                     f"{summary['agent_calls']} assisted calls queued; schedule updated"),
         "llm": [call],
         "output": summary,

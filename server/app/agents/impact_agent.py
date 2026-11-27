@@ -8,7 +8,7 @@ from app.core.llm import llm
 from app.core.utils import add_min, minutes_between
 from app.data import reference as ref
 from app.data.store import is_priority, store
-from app.domain import network
+from app.domain import contacts, network
 from app.domain.recovery import COST
 
 SYSTEM = ("You are the network impact analyst in an operations control centre. Explain cascading effects "
@@ -30,6 +30,7 @@ def impact_node(state: dict) -> tuple[dict, dict]:
     det = state["detection"]
     scope = det["scope"]
     with store.lock:
+        contact_pax = contacts.attach(scope)
         primary = network.primary_delays(scope)
         delays = network.propagate(primary)
         breaches = network.crew_breaches(delays)
@@ -132,6 +133,7 @@ def impact_node(state: dict) -> tuple[dict, dict]:
         "crew_breaches": breaches,
         "missed_connections": missed[:80],
         "priority_passengers": priority[:80],
+        "contact_passengers": contact_pax,
         "narrative": narrative,
         "key_risks": (out or {}).get("key_risks") or [
             "Crew duty-time limits on late rotations", "Connection banks at the hub", "Seat inventory for re-accommodation"],

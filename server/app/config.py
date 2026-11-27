@@ -41,6 +41,20 @@ class Settings:
 
     voice_audio_processing = (_env("AZURE_VOICELIVE_AUDIO_PROCESSING", default="true") or "true").lower() == "true"
 
+    smtp_host = _env("SMTP_HOST")
+    smtp_port = int(_env("SMTP_PORT", default="587"))
+    smtp_user = _env("SMTP_USER", "SMTP_USERNAME")
+    smtp_password = _env("SMTP_PASSWORD")
+    smtp_from = _env("SMTP_FROM", default=smtp_user)
+    smtp_from_name = _env("SMTP_FROM_NAME", default="Meridian Airways Disruption Desk")
+
+    sms_provider = (_env("SMS_PROVIDER", default="") or "").lower()
+    twilio_account_sid = _env("TWILIO_ACCOUNT_SID")
+    twilio_auth_token = _env("TWILIO_AUTH_TOKEN")
+    twilio_from = _env("TWILIO_FROM", "TWILIO_PHONE_NUMBER")
+    twilio_messaging_service_sid = _env("TWILIO_MESSAGING_SERVICE_SID")
+    fast2sms_api_key = _env("FAST2SMS_API_KEY")
+
     agent_step_delay_s = float(_env("AGENT_STEP_DELAY_SECONDS", default="0.8"))
     weather_api_enabled = (_env("WEATHER_API_ENABLED", default="true") or "true").lower() == "true"
     telemetry_interval_s = float(_env("TELEMETRY_INTERVAL_SECONDS", default="6"))

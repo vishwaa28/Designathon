@@ -13,7 +13,7 @@ from app.data.store import store
 
 log = logging.getLogger("arro.weather")
 
-HUBS = ["DEL", "BOM", "BLR", "MAA", "HYD", "CCU"]
+HUBS = ["MAA", "BLR", "HYD", "CJB", "COK", "IXM", "TRV", "DEL", "BOM"]
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 
 WMO = {

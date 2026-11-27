@@ -53,9 +53,18 @@ export default function Incidents() {
     },
   ]
 
+  const empty = (
+    <Empty
+      icon={AlertTriangle}
+      title="No incidents"
+      text="Disruptions detected from the weather and asset-health feeds appear here."
+      action={<Button icon={Zap} onClick={() => setLauncher(true)}>Inject event</Button>}
+    />
+  )
+
   return (
-    <div className="space-y-4 p-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 p-4 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Segmented
           value={filter}
           onChange={setFilter}
@@ -67,21 +76,35 @@ export default function Incidents() {
         />
         <Button icon={Zap} variant="secondary" onClick={() => setLauncher(true)}>Inject event</Button>
       </div>
-      <Card>
-        <Table
-          columns={columns}
-          rows={rows}
-          onRowClick={(i) => navigate(`/incidents/${i.id}`)}
-          empty={
-            <Empty
-              icon={AlertTriangle}
-              title="No incidents"
-              text="Disruptions detected from the weather and asset-health feeds appear here."
-              action={<Button icon={Zap} onClick={() => setLauncher(true)}>Inject event</Button>}
-            />
-          }
-        />
+      <Card className="hidden md:block">
+        <Table columns={columns} rows={rows} onRowClick={(i) => navigate(`/incidents/${i.id}`)} empty={empty} />
       </Card>
+      <div className="space-y-3 md:hidden">
+        {rows.map((i) => (
+          <Card key={i.id} className="cursor-pointer p-4 active:bg-slate-50" onClick={() => navigate(`/incidents/${i.id}`)}>
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-mono text-[11.5px] text-slate-500">{i.id}</span>
+              <IncidentStatus status={i.status} />
+            </div>
+            <div className="mt-2 flex items-start gap-2.5">
+              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
+                {i.mode === 'FLIGHT' ? <Plane size={14} /> : <TrainFront size={14} />}
+              </span>
+              <div className="min-w-0">
+                <p className="text-[13.5px] font-medium leading-snug text-slate-900">{i.title}</p>
+                <p className="mt-0.5 text-[11.5px] text-slate-500">{i.location} · {relTime(i.created_at)}</p>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-slate-600">
+              <SeverityBadge severity={i.severity} />
+              {i.trips_affected != null && <span>{fmtNum(i.trips_affected)} services</span>}
+              {i.pax_affected != null && <span>· {fmtNum(i.pax_affected)} pax</span>}
+              <span>· plan v{i.plan_version}</span>
+            </div>
+          </Card>
+        ))}
+        {!rows.length && <Card>{empty}</Card>}
+      </div>
       <ScenarioLauncher open={launcher} onClose={() => setLauncher(false)} />
     </div>
   )
