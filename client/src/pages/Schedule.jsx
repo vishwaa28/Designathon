@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plane, Search, TrainFront, UserRound, Users } from 'lucide-react'
+import { Plane, Search, UserRound, Users } from 'lucide-react'
 import { PaxTags } from '../components/incident/ImpactPanel'
 import {
   Badge,
@@ -9,7 +9,6 @@ import {
   KeyValue,
   PageLoader,
   Progress,
-  Segmented,
   Stat,
   Table,
   TripStatus,
@@ -51,7 +50,7 @@ function TripDrawer({ tripId, onClose }) {
             items={[
               ['Scheduled', `${fmtTime(t.sched_dep)} – ${fmtTime(t.sched_arr)}`],
               ['Estimated', `${fmtTime(t.est_dep)} – ${fmtTime(t.est_arr)}`],
-              [t.mode === 'FLIGHT' ? 'Gate' : 'Platform', t.gate],
+              ['Gate', t.gate],
               ['Load', `${t.booked} / ${t.capacity} (${Math.round(t.load_factor * 100)}%)`],
             ]}
           />
@@ -88,7 +87,7 @@ function TripDrawer({ tripId, onClose }) {
           </section>
 
           <section>
-            <h4 className="mb-2 text-[13px] font-semibold text-slate-900">{t.mode === 'FLIGHT' ? 'Aircraft' : 'Rake'} rotation</h4>
+            <h4 className="mb-2 text-[13px] font-semibold text-slate-900">Aircraft rotation</h4>
             <div className="flex flex-wrap items-center gap-1.5">
               {data.rotation.map((r, i) => (
                 <div key={r.id} className="flex items-center gap-1.5">
@@ -130,13 +129,11 @@ function TripDrawer({ tripId, onClose }) {
 }
 
 export default function Schedule() {
-  const [mode, setMode] = useState('')
   const [status, setStatus] = useState('')
   const [q, setQ] = useState('')
   const [disrupted, setDisrupted] = useState(false)
   const [trip, setTrip] = useState(null)
   const params = new URLSearchParams()
-  if (mode) params.set('mode', mode)
   if (status) params.set('status', status)
   if (q) params.set('q', q)
   if (disrupted) params.set('disrupted', 'true')
@@ -149,7 +146,7 @@ export default function Schedule() {
       render: (t) => (
         <div className="flex items-center gap-2.5">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-100 text-slate-500">
-            {t.mode === 'FLIGHT' ? <Plane size={14} /> : <TrainFront size={14} />}
+            <Plane size={14} />
           </span>
           <div>
             <p className="font-mono text-[12.5px] font-semibold text-slate-900">{t.number}</p>
@@ -190,22 +187,13 @@ export default function Schedule() {
         </div>
       ),
     },
-    { key: 'gate', label: 'Gate / PF', render: (t) => <span className="text-slate-600">{t.gate}</span> },
+    { key: 'gate', label: 'Gate', render: (t) => <span className="text-slate-600">{t.gate}</span> },
     { key: 'inc', label: 'Incident', render: (t) => (t.disruption_ids.length ? <Badge tone="rose">{t.disruption_ids.join(', ')}</Badge> : '') },
   ]
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        <Segmented
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: '', label: 'All services' },
-            { value: 'FLIGHT', label: 'Flights', icon: Plane },
-            { value: 'TRAIN', label: 'Trains', icon: TrainFront },
-          ]}
-        />
         <select className={cx(inputBase, 'flex-1 sm:w-44 sm:flex-none')} value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">Any status</option>
           {['ON_TIME', 'BOARDING', 'DELAYED', 'EN_ROUTE', 'ARRIVED', 'CANCELLED', 'DIVERTED'].map((s) => (
@@ -230,7 +218,7 @@ export default function Schedule() {
         {(data?.items || []).map((t) => (
           <button key={t.id} onClick={() => setTrip(t.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-slate-50">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
-              {t.mode === 'FLIGHT' ? <Plane size={15} /> : <TrainFront size={15} />}
+              <Plane size={15} />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">

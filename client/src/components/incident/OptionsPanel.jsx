@@ -100,7 +100,7 @@ function OptionCard({ option: o, selected, onSelect, decided, approved }) {
         <Metric label="Total cost" value={fmtINR(o.cost.total)} />
         <Metric label="Delayed / cancelled" value={`${m.trips_delayed} / ${m.trips_cancelled}`} />
         <Metric label="Avg delay" value={fmtMin(m.avg_delay_min)} tone={m.avg_delay_min > 120 ? 'amber' : undefined} />
-        <Metric label="Rebooked" value={fmtNum(m.pax_rebooked + m.pax_alt_mode)} />
+        <Metric label="Rebooked" value={fmtNum(m.pax_rebooked)} />
         <Metric label="Unaccommodated" value={fmtNum(m.pax_unaccommodated)} tone={m.pax_unaccommodated ? 'rose' : undefined} />
         <Metric label="Recovered by" value={fmtTime(m.recovery_by)} />
       </div>

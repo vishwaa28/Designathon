@@ -4,9 +4,16 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI
+# Make `app.*` importable when this file is run directly (python main.py) from inside server/app.
+_SERVER_DIR = str(Path(__file__).resolve().parent.parent)
+if _SERVER_DIR not in sys.path:
+    sys.path.insert(0, _SERVER_DIR)
+
+from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import delivery, incidents, operations, stream, traveler, voice
@@ -44,3 +51,14 @@ app.add_middleware(
 
 for module in (operations, incidents, traveler, stream, voice, delivery):
     app.include_router(module.router, prefix="/api")
+
+
+def main() -> None:
+    """Run the API server: `python main.py` (from server/ or server/app) or `python -m app.main`."""
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+if __name__ == "__main__":
+    main()

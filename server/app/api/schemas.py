@@ -41,6 +41,7 @@ class RebookRequest(BaseModel):
     last_name: str
     leg_trip_id: str
     new_trip_id: str
+    seat: str | None = None
 
 
 class RefundRequest(BaseModel):

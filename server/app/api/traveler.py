@@ -31,7 +31,7 @@ def leg_needs_action(t: dict) -> bool:
 
 def actionable_legs(p: dict) -> list[str]:
     legs = [tid for tid in p["legs"] if leg_needs_action(store.trips[tid])]
-    if p["status"] in ("REBOOKED", "REFUND_OFFERED", "DIVERTED", "COACH_TRANSFER") and not legs:
+    if p["status"] in ("REBOOKED", "REFUND_OFFERED", "DIVERTED") and not legs:
         legs = [p["legs"][0]] if p["legs"] else []
     return legs
 
@@ -66,27 +66,34 @@ def find_alternatives(p: dict, leg_trip_id: str) -> dict:
             continue
         if not (ready <= store.est_dep(t) <= horizon) or store.spare_seats(t["id"]) <= 0:
             continue
-        rows.append({**store.trip_view(t), "seats_left": store.spare_seats(t["id"]),
-                     "alt_mode": t["mode"] != leg["mode"]})
+        rows.append({**store.trip_view(t), "seats_left": store.spare_seats(t["id"])})
     return {"leg": store.trip_view(leg), "items": rows[:8]}
 
 
-def apply_rebook(p: dict, leg_trip_id: str, new_trip_id: str) -> dict:
+def apply_rebook(p: dict, leg_trip_id: str, new_trip_id: str, seat: str | None = None) -> dict:
     """Move a passenger to another service and record the confirmation. Caller holds store.lock."""
     if leg_trip_id not in p["legs"]:
         raise HTTPException(400, "Leg is not part of this booking")
     new = store.trips.get(new_trip_id)
     if not new or new["cancelled"] or store.spare_seats(new["id"]) <= 0:
         raise HTTPException(409, "Selected service is no longer available")
+    if seat is not None and store.seat_status(new["id"], p["id"]).get(seat) != "free":
+        raise HTTPException(409, f"Seat {seat} is no longer available. Please choose another seat.")
     old = store.trips[leg_trip_id]
+    store.release_seat(old["id"], p["id"])
     p["legs"] = [new["id"] if x == old["id"] else x for x in p["legs"]]
     store.pax_by_trip[old["id"]].discard(p["id"])
     store.pax_by_trip[new["id"]].add(p["id"])
     p["status"] = "REBOOKED"
+    seat = store.assign_seat(new["id"], p["id"], seat)
+    seat_text = f", seat {seat}" if seat else ""
     msg = (f"Confirmed: {p['first_name']}, you are now booked on {new['number']} "
            f"{ref.display_code(new['origin'])}-{ref.display_code(new['destination'])}, departing "
-           f"{store.est_dep(new).strftime('%H:%M')}. Your previous booking on {old['number']} is released.")
-    return _notify(p, "Rebooking confirmed", msg, "SELF_REBOOKED", old["number"], new["number"])
+           f"{store.est_dep(new).strftime('%H:%M')}{seat_text}. Your previous booking on {old['number']} is released.")
+    record = _notify(p, "Rebooking confirmed", msg, "SELF_REBOOKED", old["number"], new["number"])
+    record["seat"] = seat
+    record["new_trip_id"] = new["id"]
+    return record
 
 
 def apply_refund(p: dict, leg_trip_id: str) -> dict:
@@ -96,6 +103,7 @@ def apply_refund(p: dict, leg_trip_id: str) -> dict:
     old = store.trips[leg_trip_id]
     p["legs"] = [x for x in p["legs"] if x != old["id"]]
     store.pax_by_trip[old["id"]].discard(p["id"])
+    store.release_seat(old["id"], p["id"])
     p["status"] = "REFUNDED"
     msg = (f"Refund initiated: INR {p['fare']:,} for {old['number']} will be returned to your original "
            f"payment method within 5-7 working days.")
@@ -118,11 +126,20 @@ def alternatives(pnr: str, last_name: str, leg_trip_id: str):
         return find_alternatives(find_passenger(pnr, last_name), leg_trip_id)
 
 
+@router.get("/{pnr}/seats")
+def seats(pnr: str, last_name: str, trip_id: str):
+    with store.lock:
+        p = find_passenger(pnr, last_name)
+        if trip_id not in store.trips:
+            raise HTTPException(404, "Service not found")
+        return store.seat_map(trip_id, p["id"])
+
+
 @router.post("/{pnr}/rebook")
 def rebook(pnr: str, body: RebookRequest, background: BackgroundTasks):
     with store.lock:
         p = find_passenger(pnr, body.last_name)
-        record = apply_rebook(p, body.leg_trip_id, body.new_trip_id)
+        record = apply_rebook(p, body.leg_trip_id, body.new_trip_id, body.seat)
         new = store.trips[body.new_trip_id]
     if p.get("contact"):
         background.add_task(delivery.deliver, record, dict(p))

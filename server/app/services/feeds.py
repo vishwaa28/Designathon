@@ -15,13 +15,13 @@ log = logging.getLogger("arro.feeds")
 
 SCENARIOS = [
     {
-        "id": "wx-maa-thunderstorm", "kind": "WEATHER_AIRPORT", "category": "WEATHER", "mode": "FLIGHT",
+        "id": "wx-maa-thunderstorm", "kind": "WEATHER_AIRPORT", "category": "WEATHER",
         "title": "Severe thunderstorm over Chennai airport", "location": "MAA", "asset_id": "MAA-RWY-0725",
         "source": "Weather feed (Open-Meteo observation + nowcast)",
         "description": "Northeast-monsoon convective cell with gusts above 80 km/h and lightning inside 5 km. Runway 07/25 closed and ramp operations suspended.",
     },
     {
-        "id": "cyclone-maa", "kind": "WEATHER_AIRPORT", "category": "WEATHER", "mode": "FLIGHT",
+        "id": "cyclone-maa", "kind": "WEATHER_AIRPORT", "category": "WEATHER",
         "title": "Cyclonic storm closes Chennai airport", "location": "MAA", "asset_id": "MAA-RWY-1230",
         "source": "IMD cyclone bulletin + Open-Meteo nowcast",
         "description": "Cyclonic storm crossing the coast near Chennai: sustained winds above 70 km/h, torrential rain and water-logging on Runway 12/30. All movements suspended.",
@@ -29,30 +29,17 @@ SCENARIOS = [
         "forecast_min": 240, "condition": "Cyclonic storm",
     },
     {
-        "id": "aog-maa-hydraulic", "kind": "AIRCRAFT_FAULT", "category": "ASSET_HEALTH", "mode": "FLIGHT",
+        "id": "aog-maa-hydraulic", "kind": "AIRCRAFT_FAULT", "category": "ASSET_HEALTH",
         "title": "Hydraulic fault grounds an aircraft at Chennai", "location": "MAA", "asset_id": None,
         "source": "Asset-health stream (aircraft condition monitoring)",
         "description": "Hydraulic system B pressure loss reported before departure from Chennai. Aircraft not dispatchable under the MEL.",
-    },
-    {
-        "id": "sig-mas-ajj", "kind": "SIGNAL_FAILURE", "category": "ASSET_HEALTH", "mode": "TRAIN",
-        "title": "Signal failure on the Chennai Central - Arakkonam section", "location": "R:MAS", "asset_id": "NR-SIG-AJJ14",
-        "corridor": ["R:MAS", "R:AJJ"], "source": "Asset-health stream (interlocking telemetry)",
-        "description": "Block signal AJJ-14 near Tiruvallur: relay voltage collapsed and the track circuit shows false occupancy. Signal stuck at danger.",
-    },
-    {
-        "id": "flood-mas-gdr", "kind": "TRACK_FLOOD", "category": "WEATHER", "mode": "TRAIN",
-        "title": "Flooding on the Chennai Central - Gudur line", "location": "R:MAS", "asset_id": "NR-TC-31",
-        "corridor": ["R:MAS", "R:GDR"], "source": "Weather feed + track-circuit telemetry",
-        "description": "Extremely heavy rainfall with water above rail level between Ennore and Ponneri; track circuit TC-31 failed.",
     },
 ]
 
 
 def scenario_list() -> list[dict]:
-    hidden = {"corridor", "readings", "forecast_min", "condition"}
-    return [{k: (ref.display_code(v) if k == "location" else v) for k, v in s.items() if k not in hidden}
-            | {"corridor": [ref.display_code(c) for c in s.get("corridor", [])]} for s in SCENARIOS]
+    hidden = {"readings", "forecast_min", "condition"}
+    return [{k: v for k, v in s.items() if k not in hidden} for s in SCENARIOS]
 
 
 def _pick_grounded_aircraft(node: str) -> tuple[str, dict] | None:
@@ -84,10 +71,10 @@ def build_event(scenario_id: str) -> dict:
     received = now()
     event = {
         "id": store.next_id("EVT", 5001),
-        "scenario_id": spec["id"], "kind": spec["kind"], "category": spec["category"], "mode": spec["mode"],
+        "scenario_id": spec["id"], "kind": spec["kind"], "category": spec["category"],
         "title": spec["title"], "source": spec["source"], "description": spec["description"],
         "received_at": iso(received), "location": spec["location"], "asset_id": spec["asset_id"],
-        "corridor": spec.get("corridor"), "corroborated": spec["category"] == "WEATHER",
+        "corroborated": spec["category"] == "WEATHER",
     }
     with store.lock:
         if spec["kind"] == "WEATHER_AIRPORT":
@@ -108,12 +95,6 @@ def build_event(scenario_id: str) -> dict:
             }
             asset_update = {"standing_water_mm": round(r["precip_mm_h"] / 5, 1), "crosswind_kt": round(r["wind_gust_kmh"] / 2.8, 1),
                             "friction_coefficient": 0.38}
-        elif spec["kind"] == "SIGNAL_FAILURE":
-            event["readings"] = {"relay_voltage_v": 16.8, "response_ms": 2400, "track_circuit_ohm": 0.3}
-            asset_update = {"relay_voltage_v": 16.8, "response_ms": 2400.0, "track_circuit_ohm": 0.3}
-        elif spec["kind"] == "TRACK_FLOOD":
-            event["readings"] = {"precip_mm_h": 72, "water_above_rail_mm": 45, "shunt_resistance_ohm": 1.8}
-            asset_update = {"water_above_rail_mm": 45.0, "shunt_resistance_ohm": 1.8}
         else:
             picked = _pick_grounded_aircraft(spec["location"])
             if not picked:
@@ -164,7 +145,7 @@ def _ops_tick(rng: random.Random) -> None:
         status = store.trip_status(t)
         label = {"BOARDING": "boarding", "DELAYED": f"delayed {t['delay_min']} min", "ON_TIME": "on schedule"}.get(status, status.lower())
         title = f"{t['number']} {ref.display_code(t['origin'])}-{ref.display_code(t['destination'])} {label}"
-        detail = f"{'Gate' if t['mode'] == 'FLIGHT' else 'Platform'} {t['gate']} | departs {store.est_dep(t).strftime('%H:%M')}"
+        detail = f"Gate {t['gate']} | departs {store.est_dep(t).strftime('%H:%M')}"
         level = "warning" if status == "DELAYED" else "info"
     publish_feed("OPS", level, title, detail, t["id"])
 

@@ -66,7 +66,7 @@ export default function Assets() {
 
   if (!wos || !assets) return <PageLoader />
   const items = assets.items.filter((a) =>
-    category === 'infra' ? !['Fleet', 'Rolling stock'].includes(a.category) : category === 'fleet' ? a.category === 'Fleet' : a.category === 'Rolling stock',
+    category === 'infra' ? a.category !== 'Fleet' : a.category === 'Fleet',
   )
   const down = assets.items.filter((a) => a.status !== 'OPERATIONAL').length
 
@@ -116,7 +116,6 @@ export default function Assets() {
               options={[
                 { value: 'infra', label: 'Infrastructure' },
                 { value: 'fleet', label: 'Aircraft' },
-                { value: 'rail', label: 'Rolling stock' },
               ]}
             />
           }
@@ -127,7 +126,7 @@ export default function Assets() {
           columns={[
             { key: 'name', label: 'Asset', render: (a) => <div><p className="font-medium text-slate-800">{a.name}</p><p className="font-mono text-[11px] text-slate-500">{a.id}</p></div> },
             { key: 'cat', label: 'Category', render: (a) => <span className="text-slate-600">{a.category}</span> },
-            { key: 'loc', label: 'Location', render: (a) => a.corridor ? a.corridor.join(' – ') : a.location },
+            { key: 'loc', label: 'Location', render: (a) => a.location },
             { key: 'crit', label: 'Criticality', render: (a) => <Badge tone={a.criticality === 'CRITICAL' ? 'rose' : a.criticality === 'HIGH' ? 'orange' : 'slate'}>{titleCase(a.criticality)}</Badge> },
             { key: 'status', label: 'Status', render: (a) => <Badge tone={ASSET_STATUS_TONE[a.status]} dot>{titleCase(a.status)}</Badge> },
             {

@@ -17,13 +17,13 @@ AGENT_REGISTRY = {
     "detection": {
         "title": "Disruption Detection", "kind": "agent", "icon": "radar",
         "role": "Evaluates weather, asset-health and status feeds against operating thresholds, classifies severity and scopes the disruption window.",
-        "inputs": ["Weather feed", "Asset-health stream", "Flight / train status"],
+        "inputs": ["Weather feed", "Asset-health stream", "Flight status"],
         "outputs": ["Severity", "Scope & window", "Situation report"],
         "tools": ["Threshold rules", "Asset registry", "Language model"],
     },
     "impact_analysis": {
         "title": "Impact Analysis", "kind": "agent", "icon": "network",
-        "role": "Propagates delay through aircraft and rake rotations, checks crew duty-time limits and finds missed connections and priority passengers.",
+        "role": "Propagates delay through aircraft rotations, checks crew duty-time limits and finds missed connections and priority passengers.",
         "inputs": ["Disruption scope", "Schedule", "Crew rosters", "Bookings"],
         "outputs": ["Impacted services", "Crew breaches", "Missed connections", "Priority passengers"],
         "tools": ["Rotation propagation", "Duty-time calculator", "Connection checker", "Language model"],
@@ -37,7 +37,7 @@ AGENT_REGISTRY = {
     },
     "recovery_planner": {
         "title": "Recovery Planner", "kind": "agent", "icon": "route",
-        "role": "Generates alternative recovery plans (retime, cancel, divert, swap, alternate mode) and re-accommodates passengers against seat inventory and transit rules.",
+        "role": "Generates alternative recovery plans (retime, cancel, divert, aircraft swap) and re-accommodates passengers against seat inventory and transit rules.",
         "inputs": ["Impact", "Repair window", "Seat inventory", "Reserve crew"],
         "outputs": ["Recovery options", "Constraint checks", "Cost breakdown"],
         "tools": ["Strategy library", "Inventory allocator", "Crew allocator", "Cost model"],

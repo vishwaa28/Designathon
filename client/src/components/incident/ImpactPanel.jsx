@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertOctagon, Mail, Network, Plane, TrainFront, UserRound, Users } from 'lucide-react'
+import { AlertOctagon, Mail, Network, Plane, UserRound, Users } from 'lucide-react'
 import { fmtINR, fmtMin, fmtNum, fmtTime } from '../../lib/format'
 import { Badge, Card, CardHeader, Segmented, Stat, Table, cx } from '../ui'
 
@@ -26,7 +26,7 @@ export default function ImpactPanel({ inc }) {
       label: 'Service',
       render: (t) => (
         <div className="flex items-center gap-2">
-          {t.mode === 'FLIGHT' ? <Plane size={14} className="text-slate-400" /> : <TrainFront size={14} className="text-slate-400" />}
+          <Plane size={14} className="text-slate-400" />
           <div>
             <p className="font-mono text-[12.5px] font-semibold text-slate-900">{t.number}</p>
             <p className="text-[11.5px] text-slate-500">{t.vehicle_id}</p>
@@ -126,7 +126,7 @@ export default function ImpactPanel({ inc }) {
                   <Badge tone="rose">{b.projected_duty_h.toFixed(1)} h projected</Badge>
                 </div>
                 <p className="mt-1 text-[12px] text-slate-600">
-                  Replace before <span className="font-mono font-medium">{b.swap_trip}</span> at {b.swap_station}; reserve pool {b.reserve_base.replace('R:', '')}
+                  Replace before <span className="font-mono font-medium">{b.swap_trip}</span> at {b.swap_airport}; reserve pool {b.reserve_base}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {b.members.map((m) => (

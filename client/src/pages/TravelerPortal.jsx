@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AlertTriangle, ArrowRight, BellRing, CheckCircle2, Plane, Search, TrainFront, Undo2 } from 'lucide-react'
+import { AlertTriangle, ArrowRight, BellRing, CheckCircle2, Plane, Search, Undo2 } from 'lucide-react'
 import VoiceAgent from '../components/traveler/VoiceAgent'
 import { Badge, Button, Card, Field, TripStatus, cx, inputClass } from '../components/ui'
 import { api } from '../lib/api'
@@ -9,7 +9,7 @@ import { fmtMin, fmtTime } from '../lib/format'
 const SELF_SERVICE = new Set(['SELF_REBOOKED', 'REFUNDED'])
 
 function Leg({ leg, actionable, attention, active, onManage }) {
-  const Icon = leg.mode === 'FLIGHT' ? Plane : TrainFront
+  const Icon = Plane
   return (
     <div className={cx('rounded-xl border bg-white p-4', attention ? 'border-amber-300' : 'border-slate-200', active && 'ring-2 ring-brand-100')}>
       <div className="flex items-center justify-between gap-2">
@@ -38,7 +38,7 @@ function Leg({ leg, actionable, attention, active, onManage }) {
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-[12px] text-slate-500">
-        <span>{leg.mode === 'FLIGHT' ? 'Gate' : 'Platform'} {leg.gate}{leg.remarks && ` · ${leg.remarks}`}</span>
+        <span>Gate {leg.gate}{leg.remarks && ` · ${leg.remarks}`}</span>
         {actionable && (
           <Button size="sm" variant={active ? 'primary' : 'secondary'} onClick={onManage}>
             {active ? 'Choosing options' : 'Change or refund'}
@@ -139,7 +139,7 @@ export default function TravelerPortal() {
         <div className="flex min-w-0 items-center gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white"><Plane size={18} /></span>
           <div className="min-w-0 leading-tight">
-            <p className="truncate text-[14px] font-semibold text-white sm:text-[15px]">Meridian Airways · Southern Rail</p>
+            <p className="truncate text-[14px] font-semibold text-white sm:text-[15px]">Meridian Airways</p>
             <p className="text-[12px] text-slate-400">Manage your trip</p>
           </div>
         </div>
@@ -208,14 +208,14 @@ export default function TravelerPortal() {
                 <Card>
                   <div className="border-b border-slate-100 px-5 py-3.5">
                     <p className="text-[14px] font-semibold text-slate-900">Choose a new option</p>
-                    <p className="text-[12.5px] text-slate-500">Services with open seats in the next 24 hours, including rail and air alternatives.</p>
+                    <p className="text-[12.5px] text-slate-500">Flights with open seats in the next 24 hours.</p>
                   </div>
                   <div className="divide-y divide-slate-100">
                     {!alts && <p className="px-5 py-6 text-center text-[13px] text-slate-400">Searching…</p>}
                     {alts?.items.map((a) => (
                       <div key={a.id} className="flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-5">
                         <span className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 sm:flex">
-                          {a.mode === 'FLIGHT' ? <Plane size={16} /> : <TrainFront size={16} />}
+                          <Plane size={16} />
                         </span>
                         <div className="min-w-0 flex-1">
                           <p className="text-[13.5px] font-semibold text-slate-900">
@@ -224,7 +224,6 @@ export default function TravelerPortal() {
                           </p>
                           <p className="text-[12px] text-slate-500">
                             {a.origin} – {a.destination} · {a.seats_left} seats left
-                            {a.alt_mode && <Badge tone="violet" className="ml-2">{a.mode === 'TRAIN' ? 'Rail alternative' : 'Air alternative'}</Badge>}
                           </p>
                         </div>
                         <Button size="sm" loading={busy} onClick={() => rebook(a.id)}>Select</Button>

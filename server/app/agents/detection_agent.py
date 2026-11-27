@@ -7,7 +7,7 @@ from app.core.llm import llm
 from app.core.utils import iso, now
 from app.domain import detection
 
-SYSTEM = ("You are the disruption detection specialist in a combined airline, airport and rail operations "
+SYSTEM = ("You are the disruption detection specialist in a airline and airport operations "
           "control centre. Write crisp, factual situation reports for duty controllers. No speculation beyond the data.")
 
 

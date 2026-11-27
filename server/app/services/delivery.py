@@ -87,7 +87,7 @@ def _email_html(subject: str, message: str, details: list[tuple[str, str]], link
 <tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:14px;overflow:hidden">
 <tr><td style="background:#0b1f3a;padding:20px 24px;color:#ffffff">
-<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd">Meridian Airways &middot; Southern Rail</div>
+<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd">Meridian Airways</div>
 <div style="font-size:20px;font-weight:700;margin-top:4px">{html.escape(subject)}</div>
 </td></tr>
 <tr><td style="padding:24px">

@@ -1,8 +1,8 @@
 """Deterministic generator for the mock operating day.
 
-Produces ~90 flights/trains built from real aircraft and rake rotations, crew pairings with
-duty limits, ~20k passenger bookings (including air-air and air-rail connections) and an
-asset registry with live telemetry baselines.
+Produces ~70 flights built from real aircraft rotations, crew pairings with duty limits,
+~20k passenger bookings (including air-air connections) and an asset registry with live
+telemetry baselines.
 """
 from __future__ import annotations
 
@@ -16,9 +16,7 @@ from app.data import reference as ref
 
 FLIGHT_TURN_MIN = 45
 ATR_TURN_MIN = 30
-RAKE_TURN_MIN = 75
 
-TRAIN_SPEED_KMH = {"Vande Bharat": 95, "Shatabdi": 85, "LHB": 80, "Intercity": 70}
 
 
 def _flight_minutes(a: str, b: str) -> int:
@@ -30,13 +28,6 @@ def _flight_minutes(a: str, b: str) -> int:
 def _segment_km(a: str, b: str) -> float:
     pa, pb = ref.place(a), ref.place(b)
     return haversine_km(pa["lat"], pa["lon"], pb["lat"], pb["lon"]) * 1.25
-
-
-def _train_speed(rake_type: str) -> int:
-    for key, speed in TRAIN_SPEED_KMH.items():
-        if rake_type.startswith(key):
-            return speed
-    return 75
 
 
 class _Ids:
@@ -92,7 +83,7 @@ def generate(now: datetime) -> dict:
         for d in dests:
             legs += [(hub, d), (d, hub)]
         rotations[tail] = []
-        vehicles[tail] = {"id": tail, "type": ac_type, "mode": "FLIGHT", "seats": seats, "base": hub}
+        vehicles[tail] = {"id": tail, "type": ac_type, "seats": seats, "base": hub}
         for seq, (o, d) in enumerate(legs):
             dur = _flight_minutes(o, d)
             tid = f"MR{flight_no}"
@@ -100,7 +91,6 @@ def generate(now: datetime) -> dict:
                 "id": tid,
                 "number": f"MR {flight_no}",
                 "name": f"{ref.city_of(o)} to {ref.city_of(d)}",
-                "mode": "FLIGHT",
                 "operator": ref.AIRLINE["name"],
                 "origin": o,
                 "destination": d,
@@ -138,7 +128,7 @@ def generate(now: datetime) -> dict:
                     current = None
             if current is None:
                 pid = ids.seq("PR-", 501)
-                current = {"id": pid, "mode": "FLIGHT", "base": hub, "crew_ids": [], "trip_ids": [],
+                current = {"id": pid, "base": hub, "crew_ids": [], "trip_ids": [],
                            "duty_start": add_min(first["sched_dep"], -60)}
                 roles = ["CPT", "FO"] + ["CC"] * cabin_count
                 for role in roles:
@@ -157,57 +147,8 @@ def generate(now: datetime) -> dict:
                 crew[cid]["duty_limit_h"] = cockpit_limit if crew[cid]["role"] in ("CPT", "FO") else cockpit_limit + 1.0
 
     for tail, ac_type, seats, hub in ref.SPARE_AIRCRAFT:
-        vehicles[tail] = {"id": tail, "type": ac_type, "mode": "FLIGHT", "seats": seats, "base": hub, "spare": True}
+        vehicles[tail] = {"id": tail, "type": ac_type, "seats": seats, "base": hub, "spare": True}
         rotations[tail] = []
-
-    # ---- Trains ----------------------------------------------------------
-    train_no = 12001
-    for j, (rake, rake_type, seats, route) in enumerate(ref.RAKES):
-        stations = [ref.station_key(s) for s in route]
-        speed = _train_speed(rake_type)
-        t = add_min(base, -240 + j * 55 + rng.randint(-10, 10))
-        rotations[rake] = []
-        vehicles[rake] = {"id": rake, "type": rake_type, "mode": "TRAIN", "seats": seats, "base": stations[0]}
-        for seq, path in enumerate([stations, list(reversed(stations))]):
-            km = sum(_segment_km(a, b) for a, b in zip(path, path[1:]))
-            dur = round_to(km / speed * 60 + 10 * (len(path) - 2))
-            tid = f"NR{train_no}"
-            o, d = path[0], path[-1]
-            label = rake_type.split(" ")[0]
-            trips[tid] = {
-                "id": tid,
-                "number": f"NR {train_no}",
-                "name": f"{ref.city_of(o)} to {ref.city_of(d)} {label}",
-                "mode": "TRAIN",
-                "operator": ref.RAIL_OPERATOR["name"],
-                "origin": o,
-                "destination": d,
-                "route": path,
-                "sched_dep": t,
-                "sched_arr": add_min(t, dur),
-                "delay_min": 0,
-                "cancelled": False,
-                "diverted_to": None,
-                "vehicle_id": rake,
-                "vehicle_type": rake_type,
-                "capacity": seats,
-                "rotation_seq": seq,
-                "pairing_id": None,
-                "gate": f"PF {rng.randint(1, 16)}",
-                "disruption_ids": [],
-                "remarks": "",
-            }
-            rotations[rake].append(tid)
-            pid = ids.seq("PR-", 501)
-            pairings[pid] = {"id": pid, "mode": "TRAIN", "base": o, "crew_ids": [], "trip_ids": [tid],
-                             "duty_start": add_min(t, -45)}
-            for role in ("LP", "ALP", "GRD"):
-                cid = new_crew_member(role, o, 11.0)
-                crew[cid]["pairing_id"] = pid
-                pairings[pid]["crew_ids"].append(cid)
-            trips[tid]["pairing_id"] = pid
-            train_no += 1
-            t = add_min(t, dur + RAKE_TURN_MIN)
 
     # Reserve crew
     reserves: dict[str, dict[str, list[str]]] = {}
@@ -216,7 +157,7 @@ def generate(now: datetime) -> dict:
         for role, count in roles.items():
             reserves[crew_base][role] = []
             for _ in range(count):
-                limit = 11.0 if role in ("LP", "ALP", "GRD") else 13.0
+                limit = 13.0
                 cid = new_crew_member(role, crew_base, limit)
                 crew[cid]["status"] = "RESERVE"
                 reserves[crew_base][role].append(cid)
@@ -228,7 +169,6 @@ def generate(now: datetime) -> dict:
 
     def make_pax(legs: list[str]) -> None:
         first = trips[legs[0]]
-        is_flight = first["mode"] == "FLIGHT"
         r = rng.random()
         tier = "PLATINUM" if r < 0.03 else "GOLD" if r < 0.10 else "SILVER" if r < 0.22 else None
         s = rng.random()
@@ -238,23 +178,20 @@ def generate(now: datetime) -> dict:
             ssr = "UMNR"
         elif s < 0.032:
             ssr = "MEDA"
-        elif s < (0.05 if is_flight else 0.10):
+        elif s < 0.05:
             ssr = "SRCT"
         else:
             ssr = None
         lang = "en" if rng.random() < 0.5 else ref.CITY_LANGUAGE.get(ref.city_of(first["origin"]), "hi")
         c = rng.random()
         channel = "APP" if c < 0.35 else "SMS" if c < 0.65 else "WHATSAPP" if c < 0.9 else "EMAIL"
-        premium = rng.random() < (0.08 if is_flight else 0.15)
-        if is_flight:
-            cabin = "Business" if premium else "Economy"
-        else:
-            cabin = "Executive" if premium else "Chair Car"
+        premium = rng.random() < 0.08
+        cabin = "Business" if premium else "Economy"
         fare = 0
         for tid in legs:
             t = trips[tid]
             km = sum(_segment_km(a, b) for a, b in zip(t["route"], t["route"][1:]))
-            leg_fare = (3200 + km * 3.6) if t["mode"] == "FLIGHT" else (450 + km * 1.1)
+            leg_fare = 3200 + km * 3.6
             fare += leg_fare * (2.8 if premium else 1.0) * rng.uniform(0.85, 1.2)
         pid = ids.seq("P", 100001)
         fn, ln = rng.choice(ref.FIRST_NAMES), rng.choice(ref.LAST_NAMES)
@@ -285,18 +222,14 @@ def generate(now: datetime) -> dict:
     for inbound in trip_list:
         arr_at, arr_t = inbound["destination"], inbound["sched_arr"]
         rules = []
-        if inbound["mode"] == "FLIGHT" and arr_at == ref.HUB_AIRPORT:
-            rules.append(("FLIGHT", arr_at, 60, 300, (5, 14), 2))
-            rules.append(("TRAIN", ref.HUB_STATION, 120, 360, (3, 8), 1))
-            rules.append(("TRAIN", "R:MS", 120, 360, (2, 6), 1))
-        if inbound["mode"] == "FLIGHT" and arr_at == "BLR":
-            rules.append(("FLIGHT", arr_at, 60, 300, (3, 8), 1))
-        if inbound["mode"] == "TRAIN" and arr_at in (ref.HUB_STATION, "R:MS"):
-            rules.append(("FLIGHT", ref.HUB_AIRPORT, 150, 420, (3, 6), 1))
-        for mode, from_node, lo, hi, (nmin, nmax), picks in rules:
+        if arr_at == ref.HUB_AIRPORT:
+            rules.append((arr_at, 60, 300, (5, 14), 2))
+        if arr_at == "BLR":
+            rules.append((arr_at, 60, 300, (3, 8), 1))
+        for from_node, lo, hi, (nmin, nmax), picks in rules:
             cands = [
                 t for t in trip_list
-                if t["mode"] == mode and t["origin"] == from_node
+                if t["origin"] == from_node
                 and add_min(arr_t, lo) <= t["sched_dep"] <= add_min(arr_t, hi)
                 and ref.city_of(t["destination"]) != ref.city_of(inbound["origin"])
             ]
@@ -333,20 +266,15 @@ def generate(now: datetime) -> dict:
             "status": "OPERATIONAL",
             "baseline": dict(item["metrics"]),
             "last_inspection": base - timedelta(days=rng.randint(2, 40)),
-            "corridor": item.get("corridor"),
         })
         assets[item["id"]] = item
     for vid, v in vehicles.items():
-        if v["mode"] == "FLIGHT":
-            metrics = {"hyd_sys_b_psi": 3000.0, "egt_margin_c": float(rng.randint(32, 58)), "apu_hours_since_check": float(rng.randint(40, 380))}
-            category, typ = "Fleet", "AIRCRAFT"
-        else:
-            metrics = {"brake_cyl_bar": 3.8, "axle_box_temp_c": float(rng.randint(38, 48)), "pantograph_wear_pct": float(rng.randint(10, 45))}
-            category, typ = "Rolling stock", "RAKE"
+        metrics = {"hyd_sys_b_psi": 3000.0, "egt_margin_c": float(rng.randint(32, 58)), "apu_hours_since_check": float(rng.randint(40, 380))}
+        category, typ = "Fleet", "AIRCRAFT"
         assets[vid] = {
             "id": vid, "name": f"{v['type']} {vid}", "type": typ, "category": category,
             "location": v["base"], "criticality": "HIGH", "metrics": metrics, "baseline": dict(metrics),
-            "health": rng.randint(85, 99), "status": "OPERATIONAL", "corridor": None,
+            "health": rng.randint(85, 99), "status": "OPERATIONAL",
             "last_inspection": base - timedelta(days=rng.randint(1, 20)), "spare": v.get("spare", False),
         }
 

@@ -6,13 +6,11 @@ from datetime import datetime
 from app.core.utils import add_min, minutes_between, now, parse_dt
 from app.data import reference as ref
 from app.data.store import store
-from app.domain.geo import segment_km
 
-MIN_TURN = {"FLIGHT": 35, "TRAIN": 45}
+MIN_TURN = 35
+MIN_CONNECTION = 60
 CREW_RELEASE_MIN = 30
 RESERVE_FALLBACK = {
-    "R:MS": "R:MAS", "R:AJJ": "R:MAS", "R:KPD": "R:MAS", "R:GDR": "R:MAS", "R:BZA": "R:MAS", "R:SC": "R:MAS",
-    "R:VM": "R:MAS", "R:SA": "R:CBE", "R:ED": "R:CBE", "R:TPJ": "R:MDU",
     "CJB": "MAA", "IXM": "MAA", "TRZ": "MAA", "TRV": "COK", "IXE": "BLR", "VGA": "HYD", "TIR": "MAA",
     "GOI": "BOM", "PNQ": "BOM", "CCU": "DEL",
 }
@@ -23,51 +21,7 @@ def reserve_base(node: str) -> str:
 
 
 def min_connection(arr_trip: dict, dep_trip: dict) -> int:
-    a, d = arr_trip["mode"], dep_trip["mode"]
-    if a == d == "FLIGHT":
-        return 60
-    if a == "FLIGHT" and d == "TRAIN":
-        return 120
-    if a == "TRAIN" and d == "FLIGHT":
-        return 150
-    return 30
-
-
-def segment_window(trip: dict, a: str, b: str, delay: int | None = None) -> tuple[datetime, datetime] | None:
-    route = trip["route"]
-    idx = None
-    for i in range(len(route) - 1):
-        if {route[i], route[i + 1]} == {a, b}:
-            idx = i
-            break
-    if idx is None:
-        return None
-    seg = [segment_km(x, y) for x, y in zip(route, route[1:])]
-    total = sum(seg) or 1
-    d = trip["delay_min"] if delay is None else delay
-    dep = add_min(trip["sched_dep"], d)
-    dur = (trip["sched_arr"] - trip["sched_dep"]).total_seconds() / 60
-    entry = add_min(dep, dur * sum(seg[:idx]) / total)
-    exit_ = add_min(dep, dur * sum(seg[:idx + 1]) / total)
-    return entry, exit_
-
-
-def corridor_trains(scope: dict, end: datetime) -> list[tuple[dict, datetime, datetime]]:
-    a, b = scope["corridor"]
-    start = parse_dt(scope["start"])
-    ref_time = now()
-    rows = []
-    for t in store.trips.values():
-        if t["mode"] != "TRAIN" or t["cancelled"]:
-            continue
-        win = segment_window(t, a, b)
-        if not win:
-            continue
-        entry, exit_ = win
-        if entry < end and exit_ > start and store.est_arr(t) > ref_time:
-            rows.append((t, entry, exit_))
-    rows.sort(key=lambda r: r[1])
-    return rows
+    return MIN_CONNECTION
 
 
 def primary_delays(scope: dict, end: datetime | None = None) -> dict[str, int]:
@@ -82,7 +36,7 @@ def primary_delays(scope: dict, end: datetime | None = None) -> dict[str, int]:
         node = scope["node"]
         deps = sorted(
             (t for t in store.trips.values()
-             if t["mode"] == "FLIGHT" and not t["cancelled"] and t["origin"] == node
+             if not t["cancelled"] and t["origin"] == node
              and start <= store.est_dep(t) < end and store.est_dep(t) >= ref_time),
             key=store.est_dep,
         )
@@ -90,17 +44,12 @@ def primary_delays(scope: dict, end: datetime | None = None) -> dict[str, int]:
             out[t["id"]] = max(t["delay_min"], minutes_between(t["sched_dep"], add_min(end, 5 + i * 4)))
         arrs = sorted(
             (t for t in store.trips.values()
-             if t["mode"] == "FLIGHT" and not t["cancelled"] and t["destination"] == node
+             if not t["cancelled"] and t["destination"] == node
              and start <= store.est_arr(t) < end and t["id"] not in out and store.est_arr(t) >= ref_time),
             key=store.est_arr,
         )
         for i, t in enumerate(arrs):
             out[t["id"]] = max(t["delay_min"], minutes_between(t["sched_arr"], add_min(end, 10 + i * 3)))
-
-    elif kind == "CORRIDOR_BLOCK":
-        for i, (t, entry, _exit) in enumerate(corridor_trains(scope, end)):
-            held_from = max(entry, start)
-            out[t["id"]] = max(t["delay_min"], t["delay_min"] + minutes_between(held_from, end) + 15 + i * 10)
 
     elif kind == "VEHICLE_GROUNDED":
         for tid in store.rotations.get(scope["vehicle_id"], []):
@@ -115,8 +64,6 @@ def primary_delays(scope: dict, end: datetime | None = None) -> dict[str, int]:
 def scoped_trip_ids(scope: dict, end: datetime | None = None) -> list[str]:
     """Trips physically inside the disruption scope (used by strategies)."""
     end = end or parse_dt(scope["end"])
-    if scope["type"] == "CORRIDOR_BLOCK":
-        return [t["id"] for t, _, _ in corridor_trains(scope, end)]
     if scope["type"] == "VEHICLE_GROUNDED":
         start = parse_dt(scope["start"])
         return [tid for tid in store.rotations.get(scope["vehicle_id"], [])
@@ -125,7 +72,7 @@ def scoped_trip_ids(scope: dict, end: datetime | None = None) -> list[str]:
 
 
 def propagate(primary: dict[str, int], cancels: set[str] | frozenset = frozenset()) -> dict[str, int]:
-    """Push delays down each vehicle rotation, absorbing what turnaround slack allows."""
+    """Push delays down each aircraft rotation, absorbing what turnaround slack allows."""
     vehicles = {store.trips[t]["vehicle_id"] for t in primary} | {store.trips[t]["vehicle_id"] for t in cancels}
     result: dict[str, int] = {}
     for vid in vehicles:
@@ -138,7 +85,7 @@ def propagate(primary: dict[str, int], cancels: set[str] | frozenset = frozenset
             carried = 0
             if prev:
                 p, pd = prev
-                slack = minutes_between(p["sched_arr"], t["sched_dep"]) - MIN_TURN[t["mode"]]
+                slack = minutes_between(p["sched_arr"], t["sched_dep"]) - MIN_TURN
                 carried = max(0, pd - max(0, slack))
             d = max(own, carried)
             if d > 0:
@@ -181,10 +128,9 @@ def crew_breaches(delays: dict[str, int], cancels: set[str] | frozenset = frozen
             swap_node = store.trips[swap_trip]["origin"]
             out.append({
                 "pairing_id": pid,
-                "mode": p["mode"],
                 "swap_trip_id": swap_trip,
                 "swap_trip": store.trips[swap_trip]["number"],
-                "swap_station": ref.display_code(swap_node),
+                "swap_airport": ref.display_code(swap_node),
                 "reserve_base": reserve_base(swap_node),
                 "trips": [store.trips[t]["number"] for t in active],
                 "projected_duty_h": round(duty_h, 2),

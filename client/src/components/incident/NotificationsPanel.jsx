@@ -9,10 +9,10 @@ import { Badge, Button, Card, CardHeader, Empty, Segmented, Stat, cx, inputBase 
 
 const CHANNEL_ICON = { SMS: MessageSquareText, EMAIL: Mail, WHATSAPP: MessageCircle, APP: Smartphone }
 const OUTCOME_TONE = {
-  DELAYED: 'amber', REBOOKED: 'blue', ALT_MODE: 'violet', BUS_BRIDGE: 'violet', DIVERTED: 'violet',
+  DELAYED: 'amber', REBOOKED: 'blue', DIVERTED: 'violet',
   UNACCOMMODATED: 'rose', SELF_REBOOKED: 'emerald', REFUNDED: 'slate',
 }
-const OUTCOME_LABEL = { ALT_MODE: 'Alternate mode', BUS_BRIDGE: 'Coach bridge', UNACCOMMODATED: 'Refund offered' }
+const OUTCOME_LABEL = { UNACCOMMODATED: 'Refund offered' }
 
 function Breakdown({ title, data }) {
   const total = Object.values(data || {}).reduce((a, b) => a + b, 0) || 1

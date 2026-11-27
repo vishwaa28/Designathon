@@ -12,11 +12,11 @@ from app.data.store import is_priority, store
 from app.domain import notifications as nt
 from app.services import delivery
 
-SYSTEM = ("You write proactive traveler notifications for an airline and rail operator. Messages are short "
+SYSTEM = ("You write proactive traveler notifications for an airline. Messages are short "
           "(under 320 characters), empathetic, specific and actionable. You are fluent in Indian languages.")
 
 OUTCOME_STATUS = {
-    "DELAYED": "DELAYED", "REBOOKED": "REBOOKED", "ALT_MODE": "REBOOKED", "BUS_BRIDGE": "COACH_TRANSFER",
+    "DELAYED": "DELAYED", "REBOOKED": "REBOOKED",
     "DIVERTED": "DIVERTED", "UNACCOMMODATED": "REFUND_OFFERED",
 }
 
@@ -34,7 +34,7 @@ def _execute_plan(incident_id: str, artifacts: dict) -> dict:
     for tid in artifacts["cancels"]:
         t = store.trips[tid]
         t["cancelled"] = True
-        t["remarks"] = "Short-terminated, coach bridge" if tid in artifacts["bus_bridge"] else "Cancelled under recovery plan"
+        t["remarks"] = "Cancelled under recovery plan"
         if incident_id not in t["disruption_ids"]:
             t["disruption_ids"].append(incident_id)
         changed["cancelled"] += 1
@@ -75,8 +75,8 @@ def notification_node(state: dict) -> tuple[dict, dict]:
     prompt = (
         f"Disruption reason (English): {reason_en}.\n"
         f"Approved plan: {option['name']} - {option['summary']}\n"
-        f"Outcome types needing a template: {outcome_types} (DELAYED=same trip later, REBOOKED=new trip same mode, "
-        f"ALT_MODE=moved to other mode, BUS_BRIDGE=coach over failed section, DIVERTED=landing at alternate with coach, "
+        f"Outcome types needing a template: {outcome_types} (DELAYED=same trip later, REBOOKED=moved to another flight, "
+        f"DIVERTED=landing at alternate with coach, "
         f"UNACCOMMODATED=no seat, refund or next-day).\n"
         f"Languages: {[ref.LANGUAGES[l] + ' (' + l + ')' for l in languages]}.\n"
         f"Use these exact placeholders where relevant: {nt.PLACEHOLDERS} ({nt.PLACEHOLDER_NOTES}). Always include {{link}} in outcome templates. "

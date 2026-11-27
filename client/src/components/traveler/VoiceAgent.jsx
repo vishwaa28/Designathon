@@ -289,7 +289,7 @@ export default function VoiceAgent({ booking, onBookingChanged }) {
                 </span>
                 <p className="mt-3 text-[14px] font-semibold text-slate-900">Ask about your journey, in your language</p>
                 <p className="mt-1 max-w-sm text-[12.5px] leading-relaxed text-slate-500">
-                  The assistant can explain what changed, find other flights or trains with seats, rebook you or start a refund once you confirm.
+                  The assistant can explain what changed, find other flights with seats, rebook you or start a refund once you confirm.
                 </p>
               </div>
             )}

@@ -1,6 +1,6 @@
 """Recovery plan generation and evaluation.
 
-Each strategy produces a set of retimings, cancellations, diversions and bus bridges. The
+Each strategy produces a set of retimings, cancellations, and diversions. The
 shared evaluator then re-accommodates passengers against live seat inventory (priority
 passengers first), allocates reserve crew to duty-time breaches, checks transit rules and
 prices the plan.
@@ -19,12 +19,11 @@ from app.domain.geo import flight_minutes
 from app.domain.network import crew_breaches, min_connection, pax_effects, primary_delays, propagate, scoped_trip_ids
 
 COST = {
-    "delay_per_min": {"FLIGHT": 2200, "TRAIN": 450},
-    "care_2h": {"FLIGHT": 350, "TRAIN": 150},
-    "hotel": {"FLIGHT": 4200, "TRAIN": 1400},
-    "cancel_comp": {"FLIGHT": 5000, "TRAIN": 250},
-    "rebook": {"FLIGHT": 600, "TRAIN": 150},
-    "alt_mode": 1800,
+    "delay_per_min": 2200,
+    "care_2h": 350,
+    "hotel": 4200,
+    "cancel_comp": 5000,
+    "rebook": 600,
     "reserve_callout": 18000,
     "diversion": 350000,
     "coach": 28000,
@@ -32,9 +31,8 @@ COST = {
 }
 COACH_SEATS = 50
 REBOOK_HORIZON_MIN = 18 * 60
+SELF_SERVICE_RESERVE = 6
 ALTERNATES = {"MAA": [("TIR", 210), ("BLR", 360)], "BLR": [("MAA", 360), ("CJB", 420)]}
-RAIL_DIVERSION = {frozenset({"R:MAS", "R:AJJ"}): ("Chennai Beach-Chengalpattu-Arakkonam", 85)}
-BUS_BRIDGE_MIN = {frozenset({"R:MAS", "R:AJJ"}): 150, frozenset({"R:MAS", "R:GDR"}): 210}
 
 
 def _alt_index() -> dict[tuple[str, str], list[str]]:
@@ -57,13 +55,12 @@ def _constraint(name: str, status: str, detail: str) -> dict:
 
 def evaluate_plan(
     *, ctx: dict, primary: dict[str, int], cancels: set[str] | None = None,
-    diversions: dict[str, tuple[str, int]] | None = None, bus_bridge: dict[str, int] | None = None,
-    allow_alt_mode: bool = False, extra_costs: list[tuple[str, int]] | None = None,
+    diversions: dict[str, tuple[str, int]] | None = None,
+    extra_costs: list[tuple[str, int]] | None = None,
     actions: list[dict] | None = None, extra_constraints: list[dict] | None = None,
 ) -> tuple[dict, dict]:
     cancels = set(cancels or ())
     diversions = diversions or {}
-    bus_bridge = bus_bridge or {}
     adjustments = ctx.get("adjustments", {})
     preferences = ctx.get("preferences", {})
     ref_time = now()
@@ -100,42 +97,30 @@ def evaluate_plan(
 
     # ---- passenger re-accommodation ----------------------------------------
     inventory_factor = float(adjustments.get("inventory_factor", 1.0))
-    inventory = {tid: int(store.spare_seats(tid) * inventory_factor) for tid in store.trips if tid not in cancels}
+    # A few seats per service stay unsold by the planner so travellers can still rebook themselves.
+    inventory = {tid: max(0, int(store.spare_seats(tid) * inventory_factor) - SELF_SERVICE_RESERVE)
+                 for tid in store.trips if tid not in cancels}
     effects = pax_effects(delays, cancels)
     idx = _alt_index()
 
-    def find_alt(origin: str, dest: str, ready: datetime, mode: str, exclude: set[str]) -> str | None:
+    def find_alt(origin: str, dest: str, ready: datetime, exclude: set[str]) -> str | None:
         key = (ref.city_of(origin), ref.city_of(dest))
         horizon = add_min(ready, REBOOK_HORIZON_MIN)
-        best_same, best_other = None, None
         for tid in idx.get(key, []):
             t = store.trips[tid]
-            if tid in exclude or tid in cancels or t["cancelled"] or tid in diversions or tid in bus_bridge:
+            if tid in exclude or tid in cancels or t["cancelled"] or tid in diversions:
                 continue
             dep = _est(tid, delays, "sched_dep")
             if dep < ready or dep > horizon or inventory.get(tid, 0) <= 0:
                 continue
-            if t["mode"] == mode:
-                if best_same is None:
-                    best_same = tid
-            elif allow_alt_mode and best_other is None:
-                best_other = tid
-            if best_same and (best_other or not allow_alt_mode):
-                break
-        if best_same and best_other:
-            same_arr = _est(best_same, delays, "sched_arr")
-            other_arr = _est(best_other, delays, "sched_arr")
-            return best_other if minutes_between(other_arr, same_arr) > 120 else best_same
-        return best_same or best_other
+            return tid
+        return None
 
     outcomes: dict[str, dict] = {}
     rebook_queue = []
     for pid, e in effects.items():
         p = store.passengers[pid]
-        if e["cancelled_leg"] and e["cancelled_leg"] in bus_bridge:
-            outcomes[pid] = {"type": "BUS_BRIDGE", "leg": e["cancelled_leg"], "new_trip": None,
-                             "delay_min": bus_bridge[e["cancelled_leg"]]}
-        elif e["cancelled_leg"]:
+        if e["cancelled_leg"]:
             leg = store.trips[e["cancelled_leg"]]
             ready = max(add_min(ref_time, 30), leg["sched_dep"])
             rebook_queue.append((pid, leg["id"], leg["origin"], leg["destination"], ready, leg["sched_arr"]))
@@ -155,12 +140,11 @@ def evaluate_plan(
     for pid, leg_id, origin, dest, ready, orig_arr in rebook_queue:
         p = store.passengers[pid]
         exclude = set(p["legs"])
-        alt = find_alt(origin, dest, ready, store.trips[leg_id]["mode"], exclude)
+        alt = find_alt(origin, dest, ready, exclude)
         if alt:
             inventory[alt] -= 1
             new_arr = _est(alt, delays, "sched_arr")
-            same_mode = store.trips[alt]["mode"] == store.trips[leg_id]["mode"]
-            outcomes[pid] = {"type": "REBOOKED" if same_mode else "ALT_MODE", "leg": leg_id, "new_trip": alt,
+            outcomes[pid] = {"type": "REBOOKED", "leg": leg_id, "new_trip": alt,
                              "delay_min": max(0, minutes_between(orig_arr, new_arr))}
         else:
             outcomes[pid] = {"type": "UNACCOMMODATED", "leg": leg_id, "new_trip": None, "delay_min": 0}
@@ -171,7 +155,7 @@ def evaluate_plan(
         by_type[o["type"]] += 1
     delayed_trips = {t: d for t, d in delays.items() if d >= 15}
     missed_total = sum(1 for e in effects.values() if e["missed"])
-    missed_protected = sum(1 for pid, e in effects.items() if e["missed"] and outcomes[pid]["type"] in ("REBOOKED", "ALT_MODE"))
+    missed_protected = sum(1 for pid, e in effects.items() if e["missed"] and outcomes[pid]["type"] == "REBOOKED")
     priority_total = sum(1 for pid in effects if is_priority(store.passengers[pid]))
     priority_unprotected = sum(1 for pid, o in outcomes.items() if o["type"] == "UNACCOMMODATED" and is_priority(store.passengers[pid]))
     pax_delay_hours = sum(o["delay_min"] for o in outcomes.values()) / 60
@@ -185,30 +169,24 @@ def evaluate_plan(
     cost: dict[str, float] = defaultdict(float)
     for tid, d in delays.items():
         t = store.trips[tid]
-        cost["Operational delay"] += max(0, d - t["delay_min"]) * COST["delay_per_min"][t["mode"]]
+        cost["Operational delay"] += max(0, d - t["delay_min"]) * COST["delay_per_min"]
     for pid, o in outcomes.items():
         p = store.passengers[pid]
-        mode = store.trips[o["leg"]]["mode"] if o["leg"] else "FLIGHT"
         typ = o["type"]
         if typ in ("DELAYED", "DIVERTED"):
             if o["delay_min"] >= 120:
-                cost["Passenger care"] += COST["care_2h"][mode]
+                cost["Passenger care"] += COST["care_2h"]
             if o["delay_min"] >= 360:
-                cost["Hotel & meals"] += COST["hotel"][mode]
-        elif typ in ("REBOOKED", "ALT_MODE"):
-            cost["Rebooking"] += COST["rebook"][mode] if typ == "REBOOKED" else COST["alt_mode"]
+                cost["Hotel & meals"] += COST["hotel"]
+        elif typ == "REBOOKED":
+            cost["Rebooking"] += COST["rebook"]
             if o["delay_min"] >= 360:
-                cost["Hotel & meals"] += COST["hotel"][mode]
+                cost["Hotel & meals"] += COST["hotel"]
         elif typ == "UNACCOMMODATED":
             cost["Refunds"] += p["fare"]
-            cost["Hotel & meals"] += COST["hotel"][mode] * 0.5
-        if o["leg"] in cancels and mode == "FLIGHT":
-            cost["Cancellation compensation"] += COST["cancel_comp"]["FLIGHT"]
-        elif o["leg"] in cancels:
-            cost["Cancellation compensation"] += COST["cancel_comp"]["TRAIN"]
-    bridge_pax = by_type.get("BUS_BRIDGE", 0)
-    if bridge_pax:
-        cost["Bus bridge"] += math.ceil(bridge_pax / COACH_SEATS) * COST["coach"]
+            cost["Hotel & meals"] += COST["hotel"] * 0.5
+        if o["leg"] in cancels:
+            cost["Cancellation compensation"] += COST["cancel_comp"]
     for tid in diversions:
         cost["Diversions"] += COST["diversion"] + math.ceil(store.booked(tid) / COACH_SEATS) * COST["coach"]
     cost["Reserve crew"] += resolved_members * COST["reserve_callout"]
@@ -233,7 +211,7 @@ def evaluate_plan(
         constraints.append(_constraint("Crew duty-time limits", "PASS", f"{len(breaches)} pairings exceed limits; {resolved_members} reserve crew assigned."))
     else:
         constraints.append(_constraint("Crew duty-time limits", "FAIL", f"{len(unresolved)} pairings exceed limits with no reserve crew available at base."))
-    constraints.append(_constraint("Minimum connection time", "PASS", "Every rebooked itinerary respects minimum connection times (air 60, air-rail 120, rail-air 150 min)."))
+    constraints.append(_constraint("Minimum connection time", "PASS", "Every rebooked itinerary respects minimum connection times (60 min between flights)."))
     if priority_total:
         status = "PASS" if priority_unprotected == 0 else "WARN"
         constraints.append(_constraint("Priority passengers", status,
@@ -257,7 +235,6 @@ def evaluate_plan(
             "pax_affected": len(effects),
             "pax_delayed": by_type.get("DELAYED", 0) + by_type.get("DIVERTED", 0),
             "pax_rebooked": by_type.get("REBOOKED", 0),
-            "pax_alt_mode": by_type.get("ALT_MODE", 0) + by_type.get("BUS_BRIDGE", 0),
             "pax_unaccommodated": unacc,
             "pax_delay_hours": round(pax_delay_hours, 1),
             "connections_missed": missed_total,
@@ -280,7 +257,6 @@ def evaluate_plan(
         "delays": delays,
         "cancels": sorted(cancels),
         "diversions": {k: v[0] for k, v in diversions.items()},
-        "bus_bridge": sorted(bus_bridge),
     }
     return option, artifacts
 
@@ -327,13 +303,12 @@ def weather_cancel_consolidate(ctx: dict, end: datetime) -> dict:
     return {"primary": remaining, "cancels": cancels, "actions": actions}
 
 
-def weather_divert_multimodal(ctx: dict, end: datetime) -> dict:
+def weather_divert(ctx: dict, end: datetime) -> dict:
     node = ctx["scope"]["node"]
     primary = primary_delays(ctx["scope"], end)
     diversions: dict[str, tuple[str, int]] = {}
     cancels: set[str] = set()
     actions = []
-    rail_cities = {ref.city_of(t["destination"]) for t in store.trips.values() if t["mode"] == "TRAIN" and ref.city_of(t["origin"]) == ref.city_of(node)}
     for tid, d in list(primary.items()):
         t = store.trips[tid]
         if t["destination"] == node and d >= 90:
@@ -350,66 +325,11 @@ def weather_divert_multimodal(ctx: dict, end: datetime) -> dict:
                 nxt = store.trips[rot[i + 1]]
                 reposition = add_min(end, flight_minutes(alt, node) + 45)
                 primary[nxt["id"]] = max(primary.get(nxt["id"], 0), minutes_between(nxt["sched_dep"], reposition))
-        elif t["origin"] == node and ref.city_of(t["destination"]) in rail_cities and d >= 60:
-            cancels.add(tid)
-            actions.append({"type": "ALT_MODE", "trip": t["number"],
-                            "detail": f"Cancel short-haul {t['number']}; move passengers to rail towards {ref.city_of(t['destination'])}"})
     remaining = {k: v for k, v in primary.items() if k not in cancels}
     actions += _retime_actions({k: v for k, v in remaining.items() if k not in diversions}, "Retime")
     constraints = [_constraint("Alternate aerodrome capacity", "PASS" if len(diversions) <= 4 else "WARN",
                                f"{len(diversions)} diversions planned against 4 parking stands available at alternates.")]
-    return {"primary": remaining, "cancels": cancels, "diversions": diversions, "allow_alt_mode": True,
-            "actions": actions, "extra_constraints": constraints}
-
-
-def rail_caution_order(ctx: dict, end: datetime) -> dict:
-    scope = ctx["scope"]
-    ids = scoped_trip_ids(scope, end)
-    primary = {tid: store.trips[tid]["delay_min"] + 35 + i * 20 for i, tid in enumerate(ids)}
-    queue_ok = len(ids) <= 6
-    constraints = [
-        _constraint("Transit rule: one train per block under Paper Line Clear", "PASS" if queue_ok else "WARN",
-                    f"{len(ids)} trains queued through the failed block at 3 trains/hour."),
-    ]
-    if scope.get("hazard") == "FLOOD":
-        constraints.append(_constraint("Safety rule: water above rail", "FAIL",
-                                       "Traffic must be suspended while water is more than 25 mm above rail level."))
-    else:
-        constraints.append(_constraint("Speed restriction", "PASS",
-                                       "15 km/h caution order through the affected section with station-master authority."))
-    return {"primary": primary, "actions": _retime_actions(primary, "Run under caution order"), "extra_constraints": constraints}
-
-
-def rail_hold(ctx: dict, end: datetime) -> dict:
-    primary = primary_delays(ctx["scope"], end)
-    return {"primary": primary, "actions": _retime_actions(primary, "Hold until block restored, retime")}
-
-
-def rail_short_terminate(ctx: dict, end: datetime) -> dict:
-    scope = ctx["scope"]
-    corridor = frozenset(scope["corridor"])
-    ids = scoped_trip_ids(scope, end)
-    bridge_min = BUS_BRIDGE_MIN.get(corridor, 240)
-    diversion = RAIL_DIVERSION.get(corridor)
-    cancels: set[str] = set()
-    bus: dict[str, int] = {}
-    primary: dict[str, int] = {}
-    actions = []
-    for tid in ids:
-        t = store.trips[tid]
-        dur = minutes_between(t["sched_dep"], t["sched_arr"])
-        if dur <= 240 or not diversion:
-            cancels.add(tid)
-            bus[tid] = max(30, bridge_min - dur + 45)
-            actions.append({"type": "BUS_BRIDGE", "trip": t["number"],
-                            "detail": f"Short-terminate {t['number']}; {math.ceil(store.booked(tid) / COACH_SEATS)} coaches bridge the section"})
-        else:
-            route, extra = diversion
-            primary[tid] = t["delay_min"] + extra
-            actions.append({"type": "REROUTE", "trip": t["number"], "detail": f"Divert {t['number']} via {route} (+{extra} min)"})
-    constraints = [_constraint("Coach availability", "PASS" if len(bus) <= 6 else "WARN",
-                               f"{sum(math.ceil(store.booked(t) / COACH_SEATS) for t in bus)} coaches required from contracted pool of 60.")]
-    return {"primary": primary, "cancels": cancels, "bus_bridge": bus, "allow_alt_mode": True,
+    return {"primary": remaining, "cancels": cancels, "diversions": diversions,
             "actions": actions, "extra_constraints": constraints}
 
 
@@ -442,24 +362,19 @@ def aog_delay(ctx: dict, end: datetime) -> dict:
 def aog_cancel(ctx: dict, end: datetime) -> dict:
     ids = scoped_trip_ids(ctx["scope"], end)
     actions = [{"type": "CANCEL", "trip": store.trips[t]["number"], "detail": f"Cancel {store.trips[t]['number']} and re-accommodate passengers"} for t in ids]
-    return {"primary": {}, "cancels": set(ids), "allow_alt_mode": True, "actions": actions}
+    return {"primary": {}, "cancels": set(ids), "actions": actions}
 
 
 STRATEGIES: dict[str, list[tuple[str, str, str, bool, Callable]]] = {
     "AIRPORT_CLOSURE": [
         ("HOLD", "Hold and retime", "Hold departures and arrivals until the runway reopens, then release on a flow-controlled schedule. Reserve crew covers duty-time breaches.", True, weather_hold),
         ("CONSOLIDATE", "Cancel and consolidate", "Cancel the lowest-load rotation pairs to cut the cascading delay, consolidating passengers onto later services.", True, weather_cancel_consolidate),
-        ("DIVERT_MULTIMODAL", "Divert and switch mode", "Divert long-holding inbound flights to alternates with coach transfer and move short-haul passengers to rail.", True, weather_divert_multimodal),
-    ],
-    "CORRIDOR_BLOCK": [
-        ("CAUTION", "Caution-order working", "Keep trains moving through the failed block under Paper Line Clear at restricted speed, one train per block.", False, rail_caution_order),
-        ("HOLD", "Hold until restored", "Hold trains at stations until the block section is restored, then release in sequence.", True, rail_hold),
-        ("SHORT_TERMINATE", "Short-terminate and bridge", "Short-terminate short-haul trains with a coach bridge and divert long-distance trains via an alternate route.", False, rail_short_terminate),
+        ("DIVERT", "Divert to alternate", "Divert long-holding inbound flights to alternate airports with a coach transfer to the destination, and retime the remaining movements.", True, weather_divert),
     ],
     "VEHICLE_GROUNDED": [
         ("TAIL_SWAP", "Spare aircraft swap", "Ferry the spare aircraft in and swap it onto the grounded aircraft's remaining legs.", False, aog_tail_swap),
         ("HOLD", "Delay until repaired", "Keep the rotation and delay departures until line maintenance releases the aircraft.", True, aog_delay),
-        ("CANCEL", "Cancel and rebook", "Cancel the remaining legs and re-accommodate passengers on other flights and rail.", False, aog_cancel),
+        ("CANCEL", "Cancel and rebook", "Cancel the remaining legs and re-accommodate passengers on other flights.", False, aog_cancel),
     ],
 }
 

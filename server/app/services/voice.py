@@ -60,7 +60,7 @@ TOOLS = [
     ),
     FunctionTool(
         name="get_alternatives",
-        description="List alternative services with open seats (same city pair, next 24 hours, flights or trains) for one leg of the booking.",
+        description="List alternative services with open seats (same city pair, next 24 hours) for one leg of the booking.",
         parameters={
             "type": "object",
             "properties": {"leg_id": {"type": "string", "description": "Leg id from the booking, e.g. MR107"}},
@@ -75,6 +75,7 @@ TOOLS = [
             "properties": {
                 "leg_id": {"type": "string", "description": "Leg being replaced"},
                 "new_trip_id": {"type": "string", "description": "Alternative service id returned by get_alternatives"},
+                "seat": {"type": "string", "description": "Optional seat the traveler chose, e.g. 12C. Omit to assign a window seat."},
             },
             "required": ["leg_id", "new_trip_id"],
         },
@@ -112,7 +113,7 @@ def _leg_line(v: dict) -> str:
     when = f"departs {_clock(v['est_dep'])}, arrives {_clock(v['est_arr'])}"
     extra = f", delayed {v['delay_min']} min" if v["delay_min"] else ""
     return (f"- leg_id={v['id']}: {v['number']} {v['origin_city']} to {v['destination_city']}, {when}{extra}, "
-            f"status {v['status'].replace('_', ' ').lower()}, {'gate' if v['mode'] == 'FLIGHT' else 'platform'} {v['gate']}")
+            f"status {v['status'].replace('_', ' ').lower()}, gate {v['gate']}")
 
 
 def _booking_snapshot(p: dict) -> dict:
@@ -138,9 +139,9 @@ def build_instructions(p: dict, lang: str) -> str:
     needs = ", ".join(snap["actionable_leg_ids"]) or "none"
     special = {"WCHR": "wheelchair assistance", "UMNR": "unaccompanied minor", "MEDA": "medical assistance",
                "SRCT": "senior citizen"}.get(v["ssr"], "")
-    return f"""You are the voice assistant of Meridian Airways and Southern Rail, helping one traveler manage a disrupted journey by phone-style conversation.
+    return f"""You are the voice assistant of Meridian Airways, helping one traveler manage a disrupted journey by phone-style conversation.
 
-LANGUAGE: Speak and understand {cfg['label']} ({cfg['locale']}). Always answer in {cfg['label']}, using natural, polite, everyday wording. Keep flight numbers, train numbers, airport codes and times in their standard form (for example "MR 107", "MAA", "18:30"). Speak numbers clearly.
+LANGUAGE: Speak and understand {cfg['label']} ({cfg['locale']}). Always answer in {cfg['label']}, using natural, polite, everyday wording. Keep flight numbers, airport codes and times in their standard form (for example "MR 107", "MAA", "18:30"). Speak numbers clearly.
 
 STYLE: This is spoken audio. Use one to three short sentences per turn, no lists, no markdown, no emojis. Warm, calm and reassuring: travelers are worried. Ask one question at a time.
 
@@ -153,8 +154,9 @@ Known disruption: {'; '.join(snap['disruption']) or 'none recorded'}.
 
 WHAT YOU CAN DO
 - Explain what happened to the journey and the new timings using only the facts above or tool results.
-- Offer alternatives with get_alternatives and read out at most three options (service number, departure time, arrival time, seats left, and mention if it is a train or flight alternative).
+- Offer alternatives with get_alternatives and read out at most three options (service number, departure time, arrival time, seats left).
 - Rebook with rebook, or start a refund with request_refund.
+- When you call get_alternatives, the traveler also sees the options as tappable cards in the chat and can pick a seat on a seat map. If they pick one on screen you will be told, so just confirm it warmly.
 
 RULES
 - Never invent times, services, fares or policies. If unsure, call get_booking_status or say you will connect them to the help desk on {HELP_DESK}.
@@ -170,7 +172,7 @@ def _greeting_instruction(p: dict, lang: str) -> str:
     focus = ("Briefly say that you can see their journey has been affected and ask how you can help, for example by explaining "
              "the change or finding another option." if needs else
              "Say you can help with their trip status or changes, and ask how you can help.")
-    return (f"Greet {p['first_name']} warmly in {cfg['label']} as the Meridian and Southern Rail assistant. {focus} "
+    return (f"Greet {p['first_name']} warmly in {cfg['label']} as the Meridian Airways assistant. {focus} "
             f"Keep it to two short sentences.")
 
 
@@ -181,8 +183,8 @@ def _confirm(record: dict, p: dict) -> None:
         delivery.dispatch(record, p)
 
 
-def _run_tool(p: dict, name: str, args: dict) -> tuple[dict, str | None]:
-    """Execute a tool against the store. Returns (result, event_to_publish)."""
+def _run_tool(p: dict, name: str, args: dict) -> tuple[dict, str | None, dict | None]:
+    """Execute a tool against the store. Returns (result, event_to_publish, payload_for_the_ui)."""
     try:
         with store.lock:
             if name == "get_booking_status":
@@ -191,27 +193,28 @@ def _run_tool(p: dict, name: str, args: dict) -> tuple[dict, str | None]:
                     {"leg_id": leg["id"], "service": leg["number"], "from": leg["origin_city"], "to": leg["destination_city"],
                      "departs": _clock(leg["est_dep"]), "arrives": _clock(leg["est_arr"]), "delay_min": leg["delay_min"],
                      "status": leg["status"]} for leg in snap["passenger"]["legs"]],
-                        "legs_needing_action": snap["actionable_leg_ids"]}, None
+                        "legs_needing_action": snap["actionable_leg_ids"]}, None, None
             if name == "get_alternatives":
                 res = traveler.find_alternatives(p, args.get("leg_id", ""))
                 return {"options": [
-                    {"new_trip_id": t["id"], "service": t["number"], "mode": "train" if t["mode"] == "TRAIN" else "flight",
-                     "departs": _clock(t["est_dep"]), "arrives": _clock(t["est_arr"]), "seats_left": t["seats_left"],
-                     "different_mode": t["alt_mode"]} for t in res["items"][:5]]}, None
+                    {"new_trip_id": t["id"], "service": t["number"],
+                     "departs": _clock(t["est_dep"]), "arrives": _clock(t["est_arr"]), "seats_left": t["seats_left"]} for t in res["items"][:5]]}, None, \
+                    {"leg_id": args.get("leg_id", ""), "leg": res["leg"], "items": res["items"][:5]}
             if name == "rebook":
-                record = traveler.apply_rebook(p, args.get("leg_id", ""), args.get("new_trip_id", ""))
+                record = traveler.apply_rebook(p, args.get("leg_id", ""), args.get("new_trip_id", ""), args.get("seat") or None)
                 _confirm(record, p)
-                return {"ok": True, "confirmation": record["message"]}, "traveler.rebooked"
+                return {"ok": True, "confirmation": record["message"], "seat": record.get("seat")}, "traveler.rebooked", \
+                    {"notification": record}
             if name == "request_refund":
                 record = traveler.apply_refund(p, args.get("leg_id", ""))
                 _confirm(record, p)
-                return {"ok": True, "confirmation": record["message"]}, "traveler.refunded"
+                return {"ok": True, "confirmation": record["message"]}, "traveler.refunded", {"notification": record}
     except HTTPException as exc:
-        return {"ok": False, "error": exc.detail}, None
+        return {"ok": False, "error": exc.detail}, None, None
     except Exception as exc:  # noqa: BLE001
         log.exception("voice tool failed")
-        return {"ok": False, "error": str(exc)}, None
-    return {"ok": False, "error": f"unknown tool {name}"}, None
+        return {"ok": False, "error": str(exc)}, None, None
+    return {"ok": False, "error": f"unknown tool {name}"}, None, None
 
 
 # ---- session -----------------------------------------------------------------
@@ -287,6 +290,13 @@ async def run_session(ws: WebSocket, pnr: str, last_name: str, lang: str) -> Non
                             await conn.conversation.item.create(
                                 item=UserMessageItem(content=[InputTextContentPart(text=text)]))
                             await conn.response.create()
+                        elif data.get("type") == "notice" and str(data.get("text", "")).strip():
+                            # Something the traveler did on screen (for example picking a seat): tell the assistant
+                            # so it can confirm it by voice, without showing a user bubble.
+                            text = str(data["text"]).strip()[:500]
+                            await conn.conversation.item.create(
+                                item=UserMessageItem(content=[InputTextContentPart(text=text)]))
+                            await conn.response.create()
                         elif data.get("type") == "end":
                             return
 
@@ -334,9 +344,11 @@ async def run_session(ws: WebSocket, pnr: str, last_name: str, lang: str) -> Non
                         state["tool_pending"] = True
                         await _send(ws, {"type": "state", "state": "thinking"})
                         await _send(ws, {"type": "tool", "name": event.name, "args": args, "status": "running"})
-                        result, publish = await asyncio.to_thread(_run_tool, p, event.name, args)
+                        result, publish, ui = await asyncio.to_thread(_run_tool, p, event.name, args)
                         await _send(ws, {"type": "tool", "name": event.name, "args": args, "status": "done",
                                          "ok": result.get("ok", True)})
+                        if ui and result.get("ok", True):
+                            await _send(ws, {"type": "tool_result", "name": event.name, "data": ui})
                         if publish and result.get("ok"):
                             bus.publish(publish, {"pnr": p["pnr"], "via": "voice"})
                             await _send(ws, {"type": "booking_changed"})

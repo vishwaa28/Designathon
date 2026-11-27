@@ -19,7 +19,7 @@ def _brief(o: dict) -> dict:
         "id": o["id"], "name": o["name"], "summary": o["summary"], "score": o["score"], "confidence": o["confidence"],
         "cost_inr": o["cost"]["total"], "trips_delayed": m["trips_delayed"], "trips_cancelled": m["trips_cancelled"],
         "avg_delay_min": m["avg_delay_min"], "max_delay_min": m["max_delay_min"], "pax_affected": m["pax_affected"],
-        "pax_rebooked": m["pax_rebooked"], "pax_alt_mode": m["pax_alt_mode"], "pax_unaccommodated": m["pax_unaccommodated"],
+        "pax_rebooked": m["pax_rebooked"], "pax_unaccommodated": m["pax_unaccommodated"],
         "connections_protected": f"{m['connections_protected']}/{m['connections_missed']}",
         "crew_breaches_unresolved": m["crew_unresolved"], "recovery_min": m["recovery_min"],
         "repair_dependent": o["repair_dependent"], "p90_sensitivity": o.get("sensitivity"),

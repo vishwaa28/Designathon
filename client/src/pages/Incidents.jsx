@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, Plane, TrainFront, Zap } from 'lucide-react'
+import { AlertTriangle, Plane, Zap } from 'lucide-react'
 import ScenarioLauncher from '../components/ScenarioLauncher'
 import { Button, Card, Empty, IncidentStatus, PageLoader, Segmented, SeverityBadge, Table } from '../components/ui'
 import { fmtDateTime, fmtNum, relTime } from '../lib/format'
@@ -27,7 +27,7 @@ export default function Incidents() {
       render: (i) => (
         <div className="flex items-center gap-2.5">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
-            {i.mode === 'FLIGHT' ? <Plane size={14} /> : <TrainFront size={14} />}
+            <Plane size={14} />
           </span>
           <div className="min-w-0">
             <p className="truncate font-medium text-slate-900">{i.title}</p>
@@ -88,7 +88,7 @@ export default function Incidents() {
             </div>
             <div className="mt-2 flex items-start gap-2.5">
               <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
-                {i.mode === 'FLIGHT' ? <Plane size={14} /> : <TrainFront size={14} />}
+                <Plane size={14} />
               </span>
               <div className="min-w-0">
                 <p className="text-[13.5px] font-medium leading-snug text-slate-900">{i.title}</p>

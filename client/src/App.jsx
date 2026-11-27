@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import AppShell from './components/AppShell'
 import { PageLoader } from './components/ui'
 import { StreamProvider } from './lib/stream'
@@ -7,7 +7,7 @@ import { StreamProvider } from './lib/stream'
 const Overview = lazy(() => import('./pages/Overview'))
 const Incidents = lazy(() => import('./pages/Incidents'))
 const IncidentDetail = lazy(() => import('./pages/IncidentDetail'))
-const Orchestration = lazy(() => import('./pages/Orchestration'))
+const IncidentOrchestration = lazy(() => import('./pages/IncidentOrchestration'))
 const Schedule = lazy(() => import('./pages/Schedule'))
 const Assets = lazy(() => import('./pages/Assets'))
 const TravelerPortal = lazy(() => import('./pages/TravelerPortal'))
@@ -28,8 +28,8 @@ export default function App() {
             <Route path="/" element={page(Overview)} />
             <Route path="/incidents" element={page(Incidents)} />
             <Route path="/incidents/:id" element={page(IncidentDetail)} />
-            <Route path="/orchestration" element={page(Orchestration)} />
-            <Route path="/orchestration/:id" element={page(Orchestration)} />
+            <Route path="/incidents/:id/orchestration" element={page(IncidentOrchestration)} />
+            <Route path="/orchestration/*" element={<Navigate to="/incidents" replace />} />
             <Route path="/schedule" element={page(Schedule)} />
             <Route path="/assets" element={page(Assets)} />
           </Route>

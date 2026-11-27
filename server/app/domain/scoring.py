@@ -15,7 +15,7 @@ CRITERIA_LABELS = {"passenger": "Passenger impact", "cost": "Cost", "risk": "Ope
 
 
 def passenger_index(m: dict) -> float:
-    return (m["pax_delay_hours"] + 1.0 * m["pax_rebooked"] + 1.5 * m["pax_alt_mode"]
+    return (m["pax_delay_hours"] + 1.0 * m["pax_rebooked"]
             + 6.0 * m["pax_unaccommodated"] + 2.0 * (m["connections_missed"] - m["connections_protected"])
             + 3.0 * m["priority_unprotected"])
 
@@ -60,7 +60,7 @@ def score_options(options: list[dict], restoration: dict, preferences: dict, dat
         if o["repair_dependent"]:
             conf -= min(0.25, 0.25 * uncertainty_h / horizon_h)
         conf -= 0.04 * warns + 0.12 * fails
-        need = o["metrics"]["pax_rebooked"] + o["metrics"]["pax_alt_mode"] + o["metrics"]["pax_unaccommodated"]
+        need = o["metrics"]["pax_rebooked"] + o["metrics"]["pax_unaccommodated"]
         if need and o["metrics"]["pax_unaccommodated"] / need > 0.05:
             conf -= 0.06
         o["score"] = int(round(clamp(score, 5, 99)))

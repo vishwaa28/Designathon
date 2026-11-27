@@ -9,7 +9,7 @@ from app.core.utils import iso, now
 from app.data.store import store
 from app.domain import triage
 
-SYSTEM = ("You are an infrastructure maintenance planner for airports and railways. Write precise work orders "
+SYSTEM = ("You are an infrastructure maintenance planner for airports and airlines. Write precise work orders "
           "for field technicians: what failed, what to check first, and the safety precautions.")
 
 
