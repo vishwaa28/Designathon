@@ -116,6 +116,7 @@ def lookup(pnr: str, last_name: str):
         p = find_passenger(pnr, last_name)
         view = store.pax_view(p)
         notes = sorted((n for n in store.notifications if n["pax_id"] == p["id"]), key=lambda n: n["sent_at"], reverse=True)
+        notes = [{**n, "message": nt.strip_portal_link(n["message"])} for n in notes]
         return {"passenger": view, "notifications": notes[:10], "actionable_legs": actionable_legs(p),
                 "original_itinerary": [store.trips[t]["number"] for t in p["original_legs"]]}
 

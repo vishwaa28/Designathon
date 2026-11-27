@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 
 from app.core.utils import parse_dt
 from app.data import reference as ref
@@ -65,6 +66,22 @@ SUBJECTS = {
 
 def portal_link(pnr: str, last_name: str) -> str:
     return f"{PORTAL_BASE}/traveler?pnr={pnr}&name={last_name}"
+
+
+_PORTAL_URL = re.compile(r"https?://\S*/traveler\?\S*")
+_SENTENCE_END = re.compile(r"[.!?।](?=\s)")
+
+
+def strip_portal_link(text: str) -> str:
+    """Drop the self-service link and its lead-in ("Check updates:", "Manage your trip:", …) for display inside the portal."""
+    match = _PORTAL_URL.search(text or "")
+    if not match:
+        return text
+    before, after = text[:match.start()].rstrip(), text[match.end():].strip()
+    if before.endswith(":"):
+        ends = list(_SENTENCE_END.finditer(before))
+        before = before[:ends[-1].end()] if ends else ""
+    return " ".join(part for part in (before.strip(), after) if part)
 
 
 def _fmt_time(dt) -> str:

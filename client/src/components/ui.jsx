@@ -20,7 +20,7 @@ export function Card({ className, children, ...rest }) {
 export function CardHeader({ title, subtitle, icon: Icon, actions, className }) {
   return (
     <div className={cx('flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-3.5 sm:px-5', className)}>
-      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+      <div className="flex min-w-[12rem] flex-1 items-center gap-2.5">
         {Icon && (
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600">
             <Icon size={15} />

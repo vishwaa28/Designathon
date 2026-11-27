@@ -4,13 +4,10 @@ import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAx
 import {
   AlertTriangle,
   ArrowRight,
-  BellRing,
   CalendarClock,
-  Clock3,
   Plane,
   ShieldCheck,
   Users,
-  Wrench,
   Zap,
 } from 'lucide-react'
 import DeliveryCard from '../components/DeliveryCard'
@@ -24,7 +21,6 @@ import {
   CardHeader,
   Empty,
   IncidentStatus,
-  Kpi,
   PageLoader,
   SeverityBadge,
   cx,
@@ -79,6 +75,37 @@ function HubCard({ hub }) {
   )
 }
 
+const STAT = {
+  blue: { icon: 'text-blue-500', dot: 'bg-blue-500', bar: 'bg-blue-500' },
+  rose: { icon: 'text-rose-500', dot: 'bg-rose-500', bar: 'bg-rose-500' },
+  amber: { icon: 'text-amber-500', dot: 'bg-amber-500', bar: 'bg-amber-500' },
+  emerald: { icon: 'text-emerald-500', dot: 'bg-emerald-500', bar: 'bg-emerald-500' },
+}
+
+function StatCard({ label, value, sub, icon: Icon, tint = 'blue', dot, bar }) {
+  const t = STAT[tint]
+  return (
+    <div className="min-w-0 rounded-xl border border-slate-200 bg-white px-3.5 py-3 sm:px-5 sm:py-4">
+      <div className="flex items-center justify-between gap-2">
+        <p className="truncate text-[12px] font-medium text-slate-500">{label}</p>
+        <Icon size={15} className={cx('hidden shrink-0 sm:block', t.icon)} />
+      </div>
+      <p className="tabular mt-1 text-[24px] font-semibold leading-tight tracking-tight text-slate-900 sm:text-[28px]">{value}</p>
+      {sub && (
+        <p className="mt-0.5 hidden items-center gap-1.5 truncate text-[12px] text-slate-500 sm:flex">
+          {dot && <span className={cx('h-1.5 w-1.5 shrink-0 rounded-full', t.dot, dot === 'pulse' && 'animate-pulse')} />}
+          {sub}
+        </p>
+      )}
+      {bar != null && (
+        <div className="mt-2.5 hidden h-[3px] overflow-hidden rounded-full bg-slate-100 sm:block">
+          <div className={cx('h-full rounded-full', t.bar)} style={{ width: `${Math.max(2, Math.min(100, bar))}%` }} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Overview() {
   const { data } = useApi('/dashboard', {
     refreshOn: ['incident.', 'notifications.', 'work_order.', 'simulation.', 'traveler.'],
@@ -102,30 +129,28 @@ export default function Overview() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        <Kpi label="Services today" value={k.trips_total} sub={`${k.flights} flights`} icon={CalendarClock} />
-        <Kpi
-          label="On-time performance"
-          value={`${k.on_time_pct}%`}
-          sub={`${k.delayed} delayed · ${k.cancelled} cancelled`}
-          icon={Clock3}
-          tone={k.on_time_pct >= 90 ? 'emerald' : k.on_time_pct >= 80 ? 'amber' : 'rose'}
-        />
-        <Kpi
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <StatCard label="Services today" value={k.trips_total} sub={`${k.flights} flights`} icon={CalendarClock} tint="blue" />
+        <StatCard
           label="Active incidents"
           value={k.active_incidents}
           sub={k.awaiting_approval ? `${k.awaiting_approval} awaiting approval` : 'None awaiting approval'}
+          dot={k.awaiting_approval ? 'pulse' : k.active_incidents ? true : false}
           icon={AlertTriangle}
-          tone={k.active_incidents ? 'rose' : 'slate'}
-          emphasis={k.awaiting_approval > 0}
+          tint={k.awaiting_approval || k.active_incidents ? 'rose' : 'emerald'}
         />
-        <Kpi label="Passengers affected" value={fmtNum(k.pax_affected)} sub={`of ${fmtNum(k.passengers)} booked today`} icon={Users} tone="amber" />
-        <Kpi label="Open work orders" value={k.open_work_orders} sub="Field teams dispatched" icon={Wrench} tone="violet" />
-        <Kpi label="Traveler messages" value={fmtNum(k.notifications_sent)} sub="Proactive notifications sent" icon={BellRing} tone="emerald" />
+        <StatCard
+          label="Pax affected"
+          value={fmtNum(k.pax_affected)}
+          sub={`of ${fmtNum(k.passengers)} booked`}
+          icon={Users}
+          tint="amber"
+          bar={k.passengers ? (100 * k.pax_affected) / k.passengers : 0}
+        />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        <Card className="min-w-0 xl:col-span-2">
           <CardHeader title="Network status" subtitle="Hub movements in the next 3 hours with current weather" icon={Plane} />
           <div className="grid grid-cols-2 gap-2.5 p-3 sm:gap-3 sm:p-4 md:grid-cols-4">
             {data.hubs.map((h) => (
@@ -140,8 +165,8 @@ export default function Overview() {
 
       <DeliveryCard />
 
-      <div className="grid gap-5 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        <Card className="min-w-0 xl:col-span-2">
           <CardHeader title="Departures by hour" subtitle="Scheduled services with delays and cancellations" icon={CalendarClock} />
           <div className="h-[240px] px-1 pb-3 pt-4 sm:h-[280px] sm:px-3">
             <ResponsiveContainer width="100%" height="100%">

@@ -99,7 +99,7 @@ CONTACT_PASSENGERS = [
 ]
 
 # ---- Crowd monitor ---------------------------------------------------------
-# Terminals and the cameras watching them. The two video files stand in for live CCTV feeds.
+# Terminals and the cameras watching them. The four video files stand in for live CCTV feeds.
 # Calibration per camera (edit these to match the real installation):
 #   area_m2        floor area covered by the camera view, used to turn a head count into people per m2
 #   service_points open counters / lanes behind the queue
@@ -109,20 +109,39 @@ TERMINALS = [
      "description": "Departures hall and security screening"},
 ]
 
+#   kind           security (a queue with service points), concourse (people walking towards security)
+#                  or lounge (seated hold area at the gates)
+#   fast_track     the checkpoint has a priority lane for passengers who are running late
 CAMERAS = [
-    {"id": "CAM-A", "terminal": "T1", "name": "Security checkpoint A (East)", "zone": "East security entry",
-     "video": "/3947215055-preview.mp4", "area_m2": 48, "service_points": 6, "rate_per_point": 0.9,
-     "alternate": "Priority and fast-track lane"},
-    {"id": "CAM-B", "terminal": "T1", "name": "Security checkpoint B (West)", "zone": "West security entry",
-     "video": "/3995356953-preview.mp4", "area_m2": 42, "service_points": 3, "rate_per_point": 2.4,
-     "alternate": "Family and assistance lane"},
+    {"id": "CAM-A", "kind": "security", "terminal": "T1", "name": "Security checkpoint A (East)",
+     "zone": "East security entry", "video": "/3947215055-preview.mp4", "area_m2": 48,
+     "service_points": 6, "rate_per_point": 0.9, "fast_track": True, "alternate": "Priority and fast-track lane"},
+    {"id": "CAM-B", "kind": "security", "terminal": "T1", "name": "Security checkpoint B (West)",
+     "zone": "West security entry", "video": "/3995356953-preview.mp4", "area_m2": 42,
+     "service_points": 3, "rate_per_point": 2.4, "fast_track": False, "alternate": "Family and assistance lane"},
+    {"id": "CAM-C", "kind": "concourse", "terminal": "T1", "name": "Departures concourse",
+     "zone": "Concourse to the security halls", "video": "/3681884789-preview.mp4", "area_m2": 260,
+     "service_points": None, "rate_per_point": None, "fast_track": False, "alternate": None},
+    {"id": "CAM-D", "kind": "lounge", "terminal": "T1", "name": "Gate C hold area",
+     "zone": "Seated waiting area, Gate C", "video": "/3846563721-preview.mp4", "area_m2": 170, "seats": 110,
+     "service_points": None, "rate_per_point": None, "fast_track": False, "alternate": None},
 ]
 
-# Crowd density bands in people per m2 (a head-count based take on pedestrian level-of-service)
-DENSITY_BANDS = [("LOW", 0.0), ("MODERATE", 0.75), ("HIGH", 1.5), ("CRITICAL", 2.5)]
+# Crowd density bands in people per m2 (a head-count based take on pedestrian level-of-service). Queues are packed
+# tighter than a concourse where people walk, and a seated lounge needs more room per person again.
+DENSITY_BANDS_BY_KIND = {
+    "security": [("LOW", 0.0), ("MODERATE", 0.75), ("HIGH", 1.5), ("CRITICAL", 2.5)],
+    "concourse": [("LOW", 0.0), ("MODERATE", 0.3), ("HIGH", 0.7), ("CRITICAL", 1.2)],
+    "lounge": [("LOW", 0.0), ("MODERATE", 0.4), ("HIGH", 0.8), ("CRITICAL", 1.2)],
+}
+DENSITY_BANDS = DENSITY_BANDS_BY_KIND["security"]
 QUEUE_WAIT_TARGET_MIN = 10        # wait time the planner tries to bring a queue down to
 QUEUE_WAIT_ALERT_MIN = 12         # a queue this long needs action even if the density band is lower
 GATE_CLOSE_BUFFER_MIN = 35        # passengers must clear security this long before departure
+ARRIVE_EARLY_MIN = 120            # passengers reach security between this long and GATE_CLOSE_BUFFER_MIN before departure
+SAFETY_MARGIN_MIN = 10            # spare minutes the advisory asks passengers to keep
+FAST_TRACK_FACTOR = 0.35          # wait in a fast-track lane relative to the main queue at the same checkpoint (assumption)
+MAX_EXTRA_LANES = 2               # lanes the planner may ask to open per checkpoint
 
 MAINTENANCE_TEAMS = [
     {"id": "MT-AIRSIDE-MAA", "name": "Airside Operations & Runway Safety, MAA", "skill": "AIRSIDE", "base": "MAA", "eta_min": 10, "members": 8},

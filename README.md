@@ -20,7 +20,7 @@ A full-stack, multi-agent operations platform for a combined airline and rail ne
 - **Infrastructure triage** – automated work orders with team dispatch, parts, safety checklist and P50 / P90 repair windows.
 - **Traveler notifications** – multilingual messages (English, Hindi, Marathi, Gujarati, Kannada, …) across app, SMS, WhatsApp and email, assisted-call queue and a self-service portal for rebooking or refunds.
 - **Voice assistant for travelers** – Azure Speech Voice Live agent in the traveler portal. Travelers speak in English, Tamil or Telugu, hear natural neural voices, can interrupt, and the assistant can explain the disruption, search alternatives, rebook or start a refund after verbal confirmation.
-- **Crowd monitor** – two looping camera feeds (`client/public/*.mp4`) stand in for the security checkpoints of Terminal 1. A frame is sent to the vision model every 20 s; people, queue length, density (people / m²) and estimated wait are stored in SQLite, smoothed with a rolling median, and turned into a rerouting plan (steer passengers to the shorter queue, open lanes) plus an advisory to passengers on at-risk departures. Counts are model estimates and the camera area, lanes and screening rates in `server/app/data/reference.py` are calibration assumptions.
+- **Crowd monitor** – four looping camera feeds (`client/public/*.mp4`) stand in for Terminal 1: two security queues, the departures concourse and a gate lounge. A frame from each is sent to the vision model every 20 s; people, density (people / m²) and, for queues, estimated wait are stored in SQLite and smoothed with a rolling median. The rerouting plan is demand-driven: it estimates who will reach security in the next 15 minutes (concourse camera or departure schedule), splits those arrivals across the checkpoints to level the waits, adds lanes where it still helps, fast-tracks tight departures, and tells each traveler which checkpoint to use and when to be there. Counts are model estimates and the camera area, lanes, seats and screening rates in `server/app/data/reference.py` are calibration assumptions.
 - **Real-time flights** – AviationStack departures and arrivals for Chennai on the overview and crowd monitor, cached in SQLite to protect the metered quota.
 - **Agent orchestration view** – live n8n-style canvas of the LangGraph workflow with per-node execution traces and model calls.
 
@@ -49,6 +49,9 @@ AZURE_VOICELIVE_MODEL=gpt-4.1          # gpt-realtime is not available in every 
 # AZURE_VOICELIVE_API_KEY=<key>        # optional; defaults to the Azure Foundry key
 
 # Real e-mail / SMS to the four contact travelers (optional; otherwise recorded as not configured)
+SENDGRID_API_KEY=<SG.… key>            # Twilio SendGrid e-mail; the Twilio SID/token cannot send e-mail
+SENDGRID_FROM=<verified sender address>
+# SMTP is the fallback when no SendGrid key is set:
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=<gmail address>
