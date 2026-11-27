@@ -11,6 +11,7 @@ from app.core.utils import add_min, iso, now, parse_dt
 from app.data import db
 from app.data import reference as ref
 from app.data.store import is_priority, store
+from app.domain import contacts as contact_dir
 from app.domain import crowd as cw
 from app.domain import notifications as nt
 from app.services import delivery
@@ -21,8 +22,6 @@ MIN_INTERVAL_S = 5               # a camera is analysed at most this often, whoe
 MAX_IMAGE_BYTES = 1_500_000
 FLIGHT_WINDOW_MIN = 150          # departures considered for advisories
 MAX_SIMULATED_RECIPIENTS = 400
-PER_FLIGHT = 2                   # contact travelers placed per departure
-
 _last_run: dict[str, float] = {}
 _run_lock = threading.Lock()
 
@@ -178,9 +177,11 @@ def plan(terminal_id: str) -> dict:
         wait_after = max(p["rebalance"]["projected"].values())
     with store.lock:
         flights = _flight_rows(terminal_id, wait_now, wait_after)
-        contacts = [pid for pid, x in store.passengers.items() if x.get("contact")]
-        at_risk_pax = {pid for f in flights if f["at_risk"] for pid in store.pax_by_trip[f["trip_id"]]}
-    recipients = len(at_risk_pax | set(contacts))
+        window = {t["id"] for t in _terminal_departures(terminal_id)}
+        contacts = contact_dir.earliest_per_contact(trip_ids=window)
+        at_risk_pax = ({pid for f in flights if f["at_risk"] for pid in store.pax_by_trip[f["trip_id"]]}
+                       - set(contact_dir.all_contact_ids()))
+    recipients = len(at_risk_pax) + len(contacts)
     return {
         "terminal": {"id": t["id"], "name": t["name"]}, **p,
         "wait_now_min": wait_now, "wait_after_min": wait_after,
@@ -189,27 +190,6 @@ def plan(terminal_id: str) -> dict:
                        "real_channels": len(contacts)},
         "history": db.recent_reroutes(terminal_id, 8),
     }
-
-
-def _attach_contacts(terminal_id: str) -> list[dict]:
-    """Place each contact traveler on a coming departure from this terminal. Caller holds store.lock."""
-    flights = _terminal_departures(terminal_id)
-    placed = []
-    pool = [t for t in flights if add_min(now(), 20) <= store.est_dep(t)]
-    for i, pid in enumerate((pid for pid, x in store.passengers.items() if x.get("contact"))):
-        p = store.passengers[pid]
-        current = store.trips.get(p["legs"][0]) if p["legs"] else None
-        keep = current and current in flights and not (current["cancelled"] or current["diverted_to"])
-        if not keep and pool:
-            target = next((t for t in pool[min(i // PER_FLIGHT, len(pool) - 1):] if store.spare_seats(t["id"]) > 0), None)
-            if target:
-                for old in p["legs"]:
-                    store.pax_by_trip[old].discard(pid)
-                p["legs"], p["original_legs"], p["status"] = [target["id"]], [target["id"]], "CONFIRMED"
-                store.pax_by_trip[target["id"]].add(pid)
-        trip = store.trips[p["legs"][0]]
-        placed.append({"pnr": p["pnr"], "name": f"{p['first_name']} {p['last_name']}", "trip": trip["number"]})
-    return placed
 
 
 def _message(p: dict, trip: dict, plan_: dict, cams: dict[str, dict], at_risk: bool, buffer_min: int) -> tuple[str, str]:
@@ -242,13 +222,20 @@ def send_reroute(terminal_id: str, force: bool = False) -> dict:
     sent_at = iso(now())
     records, outbound = [], []
     with store.lock:
-        placed = _attach_contacts(terminal_id)
         flights = _flight_rows(terminal_id, wait_now, wait_after)
         risk_ids = {f["trip_id"] for f in flights if f["at_risk"]}
         pax_ids = {pid for tid in risk_ids for pid in store.pax_by_trip[tid]}
-        contact_ids = {pid for pid, x in store.passengers.items() if x.get("contact")}
-        simulated = sorted(pax_ids - contact_ids, key=lambda pid: (not is_priority(store.passengers[pid]), pid))
-        for pid in simulated[:MAX_SIMULATED_RECIPIENTS] + sorted(contact_ids):
+        # Contact travelers are booked on every flight: each gets one advisory, for their soonest departure here.
+        window = {t["id"] for t in _terminal_departures(terminal_id)}
+        chosen = contact_dir.earliest_per_contact(trip_ids=window)
+        placed = []
+        for pid in chosen:
+            c = store.passengers[pid]
+            placed.append({"pnr": c["pnr"], "name": f"{c['first_name']} {c['last_name']}",
+                           "trip": store.trips[c["legs"][0]]["number"]})
+        simulated = sorted(pax_ids - set(contact_dir.all_contact_ids()),
+                           key=lambda pid: (not is_priority(store.passengers[pid]), pid))
+        for pid in simulated[:MAX_SIMULATED_RECIPIENTS] + chosen:
             x = store.passengers[pid]
             trip = store.trips[x["legs"][0]]
             subject, text = _message(x, trip, plan_, cams, trip["id"] in risk_ids, buffer_min)

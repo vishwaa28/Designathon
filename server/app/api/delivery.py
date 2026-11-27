@@ -35,8 +35,11 @@ def delivery_status():
 @router.post("/delivery/test")
 def delivery_test(body: DeliveryTestRequest):
     with store.lock:
-        targets = [dict(store.passengers[pid]) for pid in contacts.contact_ids()
-                   if not body.pnr or store.passengers[pid]["pnr"] == body.pnr.upper()]
+        if body.pnr:
+            targets = [dict(store.passengers[pid]) for pid in contacts.all_contact_ids()
+                       if store.passengers[pid]["pnr"] == body.pnr.upper()]
+        else:
+            targets = [dict(store.passengers[pid]) for pid in contacts.contact_ids()]
     if not targets:
         raise HTTPException(404, "No contact passenger with that booking reference")
     results = []

@@ -153,6 +153,11 @@ export default function NotificationsPanel({ inc }) {
                   {m.contact && (
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <DeliveryChips deliveries={m.deliveries} />
+                      {m.deliveries && !m.deliveries.length && (
+                        <span className="text-[11.5px] text-slate-500">
+                          Not sent externally: already messaged for another affected flight. Use Resend to send this one.
+                        </span>
+                      )}
                       <Button size="sm" variant="ghost" icon={RotateCw} loading={resending === m.id} onClick={() => resend(m.id)}>
                         Resend
                       </Button>

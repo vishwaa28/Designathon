@@ -65,7 +65,7 @@ AVIATIONSTACK_API_KEY=<key>            # free plan is metered; results are cache
 # DATABASE_PATH=                       # default server/data/arro.db
 ```
 
-The network is centred on Chennai (MAA airport, Chennai Central and Egmore stations). Four real contact travelers (Vishwaa Yuvaraj, Lathifunisa Tausifa, Amal Sivan, Sushmitha Saravanan) are moved onto the affected services of every disruption, so they receive the actual e-mail and SMS when the controller approves a plan. **Overview → Real e-mail & SMS delivery** shows the provider status and has a test-send button.
+The network is centred on Chennai (MAA airport, Chennai Central and Egmore stations). Four real contact travelers (Vishwaa Yuvaraj, Lathifunisa Tausifa, Amal Sivan, Sushmitha Saravanan) hold a booking on **every flight** (original references VSHWA1, TAUSF2, AMALS3, SUSHM4; the booking on flight MR 101 is VSH101, TAU101, AMA101, SUS101, and so on), so any disruption finds them on the manifest. When the controller approves a plan every affected booking gets a notification record, but the real e-mail and SMS are sent once per person for their soonest affected flight, so four people do not receive dozens of messages. **Resend** on any other record sends it by hand. **Overview → Real e-mail & SMS delivery** shows the provider status and has a test-send button.
 
 At least one provider is needed for model-written narratives; without any, every agent falls back to deterministic output and the workflow still completes.
 

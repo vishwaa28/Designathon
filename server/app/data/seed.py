@@ -247,17 +247,29 @@ def generate(now: datetime) -> dict:
 
     hub_departures = [t for t in trip_list if t["origin"] == ref.HUB_AIRPORT and t["sched_dep"] >= add_min(base, 90)]
     # Contact travelers come from the SQLite contacts table (seeded from the reference defaults on first run)
+    # Every contact traveler holds a booking on every flight, so whichever service is disrupted they are on the manifest
+    # and the notification service reaches them. Their original booking reference stays on one hub departure; the
+    # booking on any other flight gets its own reference (first three letters of the base reference + flight number).
     for i, c in enumerate(db.load_contacts()):
-        trip = hub_departures[i % len(hub_departures)] if hub_departures else trip_list[-1]
-        pid = ids.seq("P", 100001)
+        home = hub_departures[i % len(hub_departures)] if hub_departures else trip_list[-1]
         ids.pnrs.add(c["pnr"])
-        passengers[pid] = {
-            "id": pid, "pnr": c["pnr"], "first_name": c["first_name"], "last_name": c["last_name"],
-            "legs": [trip["id"]], "original_legs": [trip["id"]], "tier": c["tier"], "ssr": None,
-            "language": c["language"], "channel": "EMAIL", "cabin": "Economy", "fare": 6480,
-            "phone": c["phone"], "email": c["email"], "status": "CONFIRMED", "contact": True,
-        }
-        pax_by_trip[trip["id"]].add(pid)
+        for trip in trip_list:
+            if trip["id"] == home["id"]:
+                pnr = c["pnr"]
+            else:
+                pnr = f"{c['pnr'][:3]}{trip['id'][2:]}"
+                while pnr in ids.pnrs:
+                    pnr += "X"
+                ids.pnrs.add(pnr)
+            pid = ids.seq("P", 100001)
+            passengers[pid] = {
+                "id": pid, "pnr": pnr, "first_name": c["first_name"], "last_name": c["last_name"],
+                "legs": [trip["id"]], "original_legs": [trip["id"]], "tier": c["tier"], "ssr": None,
+                "language": c["language"], "channel": "EMAIL", "cabin": "Economy", "fare": 6480,
+                "phone": c["phone"], "email": c["email"], "status": "CONFIRMED", "contact": True,
+                "contact_key": c["pnr"],
+            }
+            pax_by_trip[trip["id"]].add(pid)
 
     # ---- Assets ----------------------------------------------------------
     assets: dict[str, dict] = {}
