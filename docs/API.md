@@ -64,6 +64,37 @@ Only the four contact travelers (`contact: true`) receive real messages; every o
 | POST | `/delivery/test` | Body `{"pnr": "VSHWA1" \| null, "channels": ["EMAIL", "SMS"]}`. `pnr` null sends to all four contacts |
 | POST | `/notifications/{id}/resend` | Re-send one contact notification by e-mail and SMS |
 
+## Crowd monitor
+
+Camera frames are counted by the active vision model (Azure Responses `input_image` or Gemini). Each count is stored in SQLite and the state served to the UI is a rolling median of the last 5 readings (180 s). No numbers are produced when the model is unavailable: the frame call returns `503`.
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/crowd/overview` | `{terminals: [{id, name, capacity, total_people, queue_people, occupancy_pct, avg_density, level, max_wait_min, cameras_live, needs_action, cameras: [...], plan}], vision, frame_interval_s}` |
+| POST | `/crowd/cameras/{camera_id}/frame` | Body `{"image": "<base64 JPEG or data URL>"}` (≤ 1.5 MB). Counts people, stores the observation and returns the camera state. At most one analysis per camera every 5 s (`throttled: true` otherwise). Publishes `crowd.updated` |
+| GET | `/crowd/terminals/{id}/plan` | Rerouting plan (`REDIRECT`, `OPEN_LANES` actions), departures with `slack_min` / `slack_after_min` / `at_risk`, `recipients`, advisory history |
+| POST | `/crowd/terminals/{id}/reroute` | Body `{"force": false}`. Sends the advisory (409 when crowd levels are normal and `force` is false). Real e-mail/SMS go only to the four contact travelers. Publishes `crowd.reroute` |
+
+Formulas: density = people / area (m²), bands LOW < 0.75 ≤ MODERATE < 1.5 ≤ HIGH < 2.5 ≤ CRITICAL; wait = queue / (screening lanes × rate per lane); a flight is at risk when `minutes_to_departure − 35 − wait < 10`. Camera calibration (area, lanes, rates, video) lives in `server/app/data/reference.py`.
+
+## Real-time flights (AviationStack)
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/flights/status` | `{configured, provider, airport, cache_ttl_s, calls_today, calls_this_month}` |
+| GET | `/flights/live?direction=departures\|arrivals&refresh=false` | Board for the airport: `{source: live\|cache\|stale-cache, error, fetched_at, age_s, count, by_status, terminals, items: [{flight, airline, status, terminal, gate, delay_min, scheduled, estimated, other: {iata, airport}, live}]}`. Cached in SQLite for 15 min; `refresh=true` is honoured at most once a minute. A failed refresh serves the last cached board |
+
+## Passengers, contacts and database
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/passengers?q=&contact=&limit=` | Passenger list; `contact: true` marks the four real contact travelers (masked e-mail and phone) |
+| GET | `/contacts` | The contact travelers stored in SQLite |
+| GET | `/delivery/log?limit=&pnr=` | Audit log of every e-mail/SMS attempt |
+| GET | `/db/summary` | Row counts per SQLite table |
+
+SQLite tables: `contacts`, `delivery_log`, `incident_log`, `crowd_observations`, `crowd_reroutes`, `flight_cache`, `api_usage`. The file is `server/data/arro.db` (override with `DATABASE_PATH`; `/tmp/arro.db` on Vercel, which is not persistent).
+
 ## Voice assistant
 
 | Method | Path | Description |

@@ -98,6 +98,32 @@ CONTACT_PASSENGERS = [
      "phone": "+916381758235", "language": "en", "tier": None},
 ]
 
+# ---- Crowd monitor ---------------------------------------------------------
+# Terminals and the cameras watching them. The two video files stand in for live CCTV feeds.
+# Calibration per camera (edit these to match the real installation):
+#   area_m2        floor area covered by the camera view, used to turn a head count into people per m2
+#   service_points open counters / lanes behind the queue
+#   rate_per_point passengers processed per minute by one service point
+TERMINALS = [
+    {"id": "T1", "name": "Terminal 1", "airport": "MAA", "capacity": 1600,
+     "description": "Departures hall and security screening"},
+]
+
+CAMERAS = [
+    {"id": "CAM-A", "terminal": "T1", "name": "Security checkpoint A (East)", "zone": "East security entry",
+     "video": "/3947215055-preview.mp4", "area_m2": 48, "service_points": 6, "rate_per_point": 0.9,
+     "alternate": "Priority and fast-track lane"},
+    {"id": "CAM-B", "terminal": "T1", "name": "Security checkpoint B (West)", "zone": "West security entry",
+     "video": "/3995356953-preview.mp4", "area_m2": 42, "service_points": 3, "rate_per_point": 2.4,
+     "alternate": "Family and assistance lane"},
+]
+
+# Crowd density bands in people per m2 (a head-count based take on pedestrian level-of-service)
+DENSITY_BANDS = [("LOW", 0.0), ("MODERATE", 0.75), ("HIGH", 1.5), ("CRITICAL", 2.5)]
+QUEUE_WAIT_TARGET_MIN = 10        # wait time the planner tries to bring a queue down to
+QUEUE_WAIT_ALERT_MIN = 12         # a queue this long needs action even if the density band is lower
+GATE_CLOSE_BUFFER_MIN = 35        # passengers must clear security this long before departure
+
 MAINTENANCE_TEAMS = [
     {"id": "MT-AIRSIDE-MAA", "name": "Airside Operations & Runway Safety, MAA", "skill": "AIRSIDE", "base": "MAA", "eta_min": 10, "members": 8},
     {"id": "MT-LINE-MAA", "name": "Line Maintenance B1/B2, MAA", "skill": "AIRCRAFT", "base": "MAA", "eta_min": 15, "members": 6},

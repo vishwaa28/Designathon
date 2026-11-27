@@ -133,6 +133,50 @@ class LLMGateway:
             log.warning("LLM call failed (%s/%s): %s", provider, purpose, exc)
             return None, LLMCall(provider, model, False, latency, purpose, str(exc)[:240])
 
+    def complete_vision_json(self, system: str, prompt: str, image_b64: str, *, mime: str = "image/jpeg",
+                             purpose: str, provider: str | None = None) -> tuple[dict | None, LLMCall]:
+        """Send one image plus a prompt and parse a JSON answer (used for camera frame analysis)."""
+        provider = provider or self._active
+        model = self.model_for(provider)
+        started = time.perf_counter()
+        if not self.is_configured(provider):
+            return None, LLMCall(provider, model, False, 0, purpose, "Provider not configured")
+        system = system + "\nRespond with a single valid JSON object only. No markdown fences."
+        try:
+            if provider == "gemini":
+                import base64
+
+                from google.genai import types
+
+                resp = self._gemini().models.generate_content(
+                    model=model,
+                    contents=[types.Part.from_bytes(data=base64.b64decode(image_b64), mime_type=mime), prompt],
+                    config=types.GenerateContentConfig(system_instruction=system, temperature=0.1,
+                                                       response_mime_type="application/json"),
+                )
+                text = resp.text
+            else:
+                resp = self._azure().responses.create(
+                    model=model,
+                    instructions=system,
+                    input=[{"role": "user", "content": [
+                        {"type": "input_text", "text": prompt},
+                        {"type": "input_image", "image_url": f"data:{mime};base64,{image_b64}"},
+                    ]}],
+                )
+                text = resp.output_text
+        except Exception as exc:  # noqa: BLE001
+            latency = int((time.perf_counter() - started) * 1000)
+            log.warning("LLM vision call failed (%s/%s): %s", provider, purpose, exc)
+            return None, LLMCall(provider, model, False, latency, purpose, str(exc)[:240])
+        latency = int((time.perf_counter() - started) * 1000)
+        call = LLMCall(provider, model, True, latency, purpose)
+        parsed = parse_json(text or "")
+        if parsed is None:
+            call.ok = False
+            call.error = "Model returned unparseable JSON"
+        return parsed, call
+
     def complete_json(self, system: str, prompt: str, *, purpose: str) -> tuple[dict | None, LLMCall]:
         text, call = self.complete(
             system + "\nRespond with a single valid JSON object only. No markdown fences.",

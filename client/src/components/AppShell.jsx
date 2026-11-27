@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Menu,
   RotateCcw,
+  ScanEye,
   Wrench,
   X,
   Zap,
@@ -20,6 +21,7 @@ import { Button, cx } from './ui'
 const NAV = [
   { to: '/overview', label: 'Operations overview', icon: LayoutDashboard, end: true },
   { to: '/incidents', label: 'Incidents', icon: AlertTriangle, badge: 'awaiting' },
+  { to: '/crowd', label: 'Crowd monitor', icon: ScanEye },
   { to: '/schedule', label: 'Schedule & bookings', icon: CalendarClock },
   { to: '/assets', label: 'Assets & work orders', icon: Wrench },
 ]
@@ -27,6 +29,7 @@ const NAV = [
 const TITLES = {
   '/overview': ['Operations overview', 'Chennai hub: live air network picture'],
   '/incidents': ['Incidents', 'Detected disruptions and recovery decisions'],
+  '/crowd': ['Crowd monitor', 'Camera head counts, queue waits and passenger rerouting'],
   '/schedule': ['Schedule & bookings', 'Flights, crew and passengers'],
   '/assets': ['Assets & work orders', 'Infrastructure health and field maintenance'],
 }

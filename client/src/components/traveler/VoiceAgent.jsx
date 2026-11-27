@@ -148,7 +148,7 @@ function Bubble({ m }) {
   )
 }
 
-export default function VoiceAgent({ booking, onBookingChanged }) {
+export default function VoiceAgent({ booking, onBookingChanged, details = null }) {
   const passenger = booking?.passenger
   const { data: voiceStatus } = useApi('/voice/status')
   const [language, setLanguage] = useState(() => (LANGUAGES.some((l) => l.id === passenger?.language) ? passenger.language : 'en'))
@@ -163,7 +163,7 @@ export default function VoiceAgent({ booking, onBookingChanged }) {
 
   useEffect(() => {
     const el = scroller.current
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    if (el && voice.messages.length) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   }, [voice.messages])
 
   const pickLanguage = (id) => {
@@ -270,7 +270,7 @@ export default function VoiceAgent({ booking, onBookingChanged }) {
         </div>
 
         {/* Conversation */}
-        <div className="flex min-h-[360px] flex-col sm:min-h-[420px]">
+        <div className="flex min-h-[360px] min-w-0 flex-col sm:min-h-[420px]">
           <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3.5 sm:px-5">
             <div className="min-w-0">
               <p className="text-[13.5px] font-semibold text-slate-900">Conversation</p>
@@ -281,9 +281,19 @@ export default function VoiceAgent({ booking, onBookingChanged }) {
             <span className="rounded-md bg-slate-100 px-2 py-1 text-[11.5px] font-medium text-slate-600">{LANGUAGES.find((l) => l.id === language).label}</span>
           </div>
 
-          <div ref={scroller} className="flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-5" style={{ maxHeight: 360 }}>
+          <div ref={scroller} className="flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-5" style={{ maxHeight: details ? 640 : 360 }}>
+            {details && (
+              <>
+                <div className="space-y-3">{details}</div>
+                <div className="flex items-center gap-3 pt-1 text-[11.5px] font-medium uppercase tracking-wide text-slate-400">
+                  <span className="h-px flex-1 bg-slate-200" />
+                  Conversation
+                  <span className="h-px flex-1 bg-slate-200" />
+                </div>
+              </>
+            )}
             {!voice.messages.length && (
-              <div className="flex h-full min-h-[240px] flex-col items-center justify-center text-center">
+              <div className={cx('flex flex-col items-center justify-center text-center', details ? 'py-6' : 'h-full min-h-[240px]')}>
                 <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
                   <AudioLines size={22} />
                 </span>

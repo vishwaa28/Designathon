@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Activity, ArrowRight, BellRing, LogIn, Mic, Network, Users } from 'lucide-react'
+import { Activity, ArrowRight, BellRing, Network, Users } from 'lucide-react'
 import { Logo } from '../components/AppShell'
 
 const FEATURES = [

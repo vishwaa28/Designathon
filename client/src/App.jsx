@@ -11,6 +11,7 @@ const IncidentDetail = lazy(() => import('./pages/IncidentDetail'))
 const IncidentOrchestration = lazy(() => import('./pages/IncidentOrchestration'))
 const Schedule = lazy(() => import('./pages/Schedule'))
 const Assets = lazy(() => import('./pages/Assets'))
+const CrowdMonitor = lazy(() => import('./pages/CrowdMonitor'))
 const TravelerPortal = lazy(() => import('./pages/TravelerPortal'))
 
 const page = (Component) => (
@@ -32,6 +33,7 @@ export default function App() {
             <Route path="/incidents/:id" element={page(IncidentDetail)} />
             <Route path="/incidents/:id/orchestration" element={page(IncidentOrchestration)} />
             <Route path="/orchestration/*" element={<Navigate to="/incidents" replace />} />
+            <Route path="/crowd" element={page(CrowdMonitor)} />
             <Route path="/schedule" element={page(Schedule)} />
             <Route path="/assets" element={page(Assets)} />
           </Route>

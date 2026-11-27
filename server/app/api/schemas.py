@@ -49,6 +49,14 @@ class RefundRequest(BaseModel):
     leg_trip_id: str
 
 
+class FrameRequest(BaseModel):
+    image: str = Field(min_length=100, max_length=2_200_000, description="Base64 JPEG, optionally a data URL")
+
+
+class RerouteRequest(BaseModel):
+    force: bool = False
+
+
 class DeliveryTestRequest(BaseModel):
     pnr: str | None = None
     channels: list[Literal["EMAIL", "SMS"]] = ["EMAIL", "SMS"]

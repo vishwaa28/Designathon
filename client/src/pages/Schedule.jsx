@@ -22,7 +22,7 @@ function TripDrawer({ tripId, onClose }) {
   const { data } = useApi(tripId ? `/trips/${tripId}` : null)
   const [q, setQ] = useState('')
   const t = data?.trip
-  const pax = (data?.passengers || []).filter((p) => !q || `${p.name} ${p.pnr}`.toLowerCase().includes(q.toLowerCase()))
+  const pax = [...(data?.passengers || [])].sort((a, b) => Number(b.contact) - Number(a.contact)).filter((p) => !q || `${p.name} ${p.pnr}`.toLowerCase().includes(q.toLowerCase()))
 
   return (
     <Drawer
@@ -112,7 +112,16 @@ function TripDrawer({ tripId, onClose }) {
                 dense
                 rows={pax.slice(0, 200)}
                 columns={[
-                  { key: 'name', label: 'Passenger', render: (p) => <span className="font-medium text-slate-800">{p.name}</span> },
+                  {
+                    key: 'name',
+                    label: 'Passenger',
+                    render: (p) => (
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium text-slate-800">{p.name}</span>
+                        {p.contact && <Badge tone="brand">Contact</Badge>}
+                      </span>
+                    ),
+                  },
                   { key: 'pnr', label: 'PNR', render: (p) => <span className="font-mono text-[12px]">{p.pnr}</span> },
                   { key: 'tags', label: 'Profile', render: (p) => <PaxTags tier={p.tier} ssr={p.ssr} /> },
                   { key: 'it', label: 'Itinerary', render: (p) => <span className="font-mono text-[11.5px] text-slate-600">{p.itinerary.join(' → ')}</span> },
